@@ -1,6 +1,6 @@
 // web/url-converter.ts
 const WEBHOOK_REGEX =
-  /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\/(\d+)\/([^/?]+)(.*)?$/;
+  /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\/(\d+)\/([^/?#]+)([?#].*)?$/;
 
 export function isValidWebhookUrl(url: string): boolean {
   return WEBHOOK_REGEX.test(url);

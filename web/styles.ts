@@ -437,6 +437,7 @@ body {
   .header .tagline { font-size: 1rem; }
   .section { padding: 1.25rem; }
   .dc-message { padding-left: 3.5rem; }
-  .dc-message-avatar { width: 32px; height: 32px; }
+  .dc-message-avatar { width: 32px; height: 32px; left: 0.75rem; }
+  .dc-message-continuation { padding-left: 3.5rem; }
 }
 `;
