@@ -2,6 +2,7 @@
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import * as esbuild from "esbuild";
+import { STYLES } from "./styles";
 
 async function build() {
   const result = await esbuild.build({
@@ -15,7 +16,9 @@ async function build() {
 
   const js = result.outputFiles[0].text;
   const html = readFileSync("web/index.html", "utf-8");
-  const output = html.replace("/* __INJECTED_JS__ */", js);
+  const output = html
+    .replace("/* __INJECTED_CSS__ */", STYLES)
+    .replace("/* __INJECTED_JS__ */", js);
 
   mkdirSync("dist", { recursive: true });
   writeFileSync("dist/chunker.html", output);
