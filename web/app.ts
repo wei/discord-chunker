@@ -1,6 +1,6 @@
 // web/app.ts
 import { createAnimation } from "./animation";
-import { chunkContent, countReadableLines, DEFAULT_MAX_LINES, parseConfig } from "./chunker";
+import { chunkContent, countLines, DEFAULT_MAX_LINES, parseConfig } from "./chunker";
 import { generateCurl } from "./curl-generator";
 import { renderDiscordMarkdown } from "./markdown";
 import { convertWebhookUrl, extractWebhookParts, isValidWebhookUrl } from "./url-converter";
@@ -125,7 +125,7 @@ function renderChunks(chunks: string[]): void {
       span.textContent = `Chunk ${i + 1} of ${chunks.length}`;
       const badge = document.createElement("span");
       badge.className = "dc-message-chunk-badge";
-      badge.textContent = `${chunks[i].length} chars \u2022 ${countReadableLines(chunks[i])} lines`;
+      badge.textContent = `${chunks[i].length} chars \u2022 ${countLines(chunks[i])} lines`;
       divider.append(span, badge);
       group.appendChild(divider);
     }
@@ -158,7 +158,7 @@ function renderChunks(chunks: string[]): void {
 
       const badge = document.createElement("span");
       badge.className = "dc-message-chunk-badge";
-      badge.textContent = `${chunks[i].length} chars \u2022 ${countReadableLines(chunks[i])} lines`;
+      badge.textContent = `${chunks[i].length} chars \u2022 ${countLines(chunks[i])} lines`;
 
       header.append(username, tag, timestamp, badge);
 
