@@ -31,6 +31,10 @@ Messages under 1950 characters pass through unchanged. Longer messages are split
 POST /api/webhook/123/token?max_chars=1500&max_lines=20&thread_id=999
 ```
 
+## Prerequisites
+
+- [Node.js](https://nodejs.org/) >= 22
+
 ## Deploy
 
 ```bash

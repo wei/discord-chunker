@@ -2,6 +2,9 @@
   "name": "discord-chunker",
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
@@ -10,9 +13,9 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.12.10",
-    "@cloudflare/workers-types": "^4.20250205.0",
+    "@cloudflare/workers-types": "^4.20260210.0",
     "typescript": "^5.9.3",
-    "vitest": "~3.2.0",
-    "wrangler": "^4.0.0"
+    "vitest": "~3.2.4",
+    "wrangler": "^4.63.0"
   }
 }
