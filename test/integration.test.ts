@@ -196,4 +196,39 @@ describe("Integration", () => {
 
     expect(resp.status).toBe(200);
   });
+
+  it("includes X-Service header in every response", async () => {
+    mockDiscordWebhook();
+    const pkg = await import("../package.json");
+    const expectedHeader = `discord-chunker/${pkg.version}`;
+
+    // 1. Success case
+    const resp204 = await SELF.fetch("https://example.com/webhook/123/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: "hello" }),
+    });
+    expect(resp204.headers.get("X-Service")).toBe(expectedHeader);
+
+    // 2. Error case (404)
+    const resp404 = await SELF.fetch("https://example.com/webhook/invalid/path", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: "hello" }),
+    });
+    expect(resp404.headers.get("X-Service")).toBe(expectedHeader);
+
+    // 3. Passthrough case (multipart)
+    fetchMock
+      .get("https://discord.com")
+      .intercept({ path: /^\/api\/webhooks\//, method: "POST" })
+      .reply(200, JSON.stringify({ ok: true }), { headers: { "X-Test": "original" } });
+
+    const respMultipart = await SELF.fetch("https://example.com/webhook/123/token", {
+      method: "POST",
+      headers: { "Content-Type": "multipart/form-data; boundary=---" },
+      body: "-----",
+    });
+    expect(respMultipart.headers.get("X-Service")).toBe(expectedHeader);
+  });
 });

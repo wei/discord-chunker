@@ -1,3 +1,5 @@
+import pkg from "../package.json";
+
 export interface DiscordWebhookPayload {
   content?: string | null;
   username?: string;
@@ -38,4 +40,4 @@ export const DEFAULT_MAX_CHARS = 1950; // Safe default under Discord limit
 export const DEFAULT_MAX_LINES = 17; // Matches OpenClaw default
 export const DEFAULT_RETRY_DELAY_MS = 1000;
 export const DEFAULT_RATE_LIMIT_DELAY_MS = 2000;
-export const USER_AGENT = "discord-chunker/0.1.0";
+export const USER_AGENT = `discord-chunker/${pkg.version}`;

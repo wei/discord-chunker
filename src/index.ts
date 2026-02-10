@@ -15,28 +15,39 @@ function jsonError(error: string, status: number): Response {
   });
 }
 
-async function passthroughToDiscord(
-  request: Request,
-  webhookId: string,
-  webhookToken: string,
-  params: URLSearchParams,
-): Promise<Response> {
-  const threadId = params.get("thread_id") || undefined;
-  const wait = params.has("wait") ? params.get("wait") === "true" : undefined;
-  const url = buildDiscordUrl(webhookId, webhookToken, threadId, wait);
-
-  // Clone request to avoid consuming the body stream
-  const headers = new Headers(request.headers);
-  headers.set("User-Agent", USER_AGENT);
-  return fetch(url, {
-    method: "POST",
-    headers,
-    body: request.clone().body,
-  });
-}
-
 export default {
   async fetch(request: Request): Promise<Response> {
+    const response = await this.handleRequest(request);
+
+    // If it's a null body status, we MUST pass null as body to the constructor
+    const isNullBodyStatus = [101, 204, 205, 304].includes(response.status);
+
+    const headers = new Headers(response.headers);
+    headers.set("X-Service", USER_AGENT);
+
+    if (isNullBodyStatus) {
+      // Re-constructing with null body and no body-related headers is required for these status codes
+      headers.delete("Content-Type");
+      headers.delete("Content-Length");
+      headers.delete("Transfer-Encoding");
+
+      // In some environments, the constructor might still complain if we pass ANY init object 
+      // that could imply a body. Let's be extremely minimal.
+      return new Response(null, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      });
+    }
+
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  },
+
+  async handleRequest(request: Request): Promise<Response> {
     if (request.method !== "POST") {
       return new Response("Method not allowed", { status: 405 });
     }
@@ -63,12 +74,18 @@ export default {
 
     // Multipart passthrough (file uploads)
     if (contentType === "multipart") {
-      return passthroughToDiscord(
-        request,
-        webhookId,
-        webhookToken,
-        url.searchParams,
-      );
+      const threadId = url.searchParams.get("thread_id") || undefined;
+      const wait = url.searchParams.has("wait") ? url.searchParams.get("wait") === "true" : undefined;
+      const discordUrl = buildDiscordUrl(webhookId, webhookToken, threadId, wait);
+
+      // Clone request to avoid consuming the body stream
+      const headers = new Headers(request.headers);
+      headers.set("User-Agent", USER_AGENT);
+      return fetch(discordUrl, {
+        method: "POST",
+        headers,
+        body: request.clone().body,
+      });
     }
 
     // Read body and enforce size limit (use byte length for accurate UTF-8 measurement)
