@@ -1,10 +1,6 @@
-import { parseConfig, validateConfig } from "./config";
 import { chunkContent } from "./chunker";
-import {
-  buildDiscordUrl,
-  sendChunks,
-  validateContentType,
-} from "./discord";
+import { parseConfig, validateConfig } from "./config";
+import { buildDiscordUrl, sendChunks, validateContentType } from "./discord";
 import type { DiscordWebhookPayload } from "./types";
 import { MAX_INPUT_BYTES, USER_AGENT } from "./types";
 
@@ -31,7 +27,7 @@ export default {
       headers.delete("Content-Length");
       headers.delete("Transfer-Encoding");
 
-      // In some environments, the constructor might still complain if we pass ANY init object 
+      // In some environments, the constructor might still complain if we pass ANY init object
       // that could imply a body. Let's be extremely minimal.
       return new Response(null, {
         status: response.status,
@@ -75,7 +71,9 @@ export default {
     // Multipart passthrough (file uploads)
     if (contentType === "multipart") {
       const threadId = url.searchParams.get("thread_id") || undefined;
-      const wait = url.searchParams.has("wait") ? url.searchParams.get("wait") === "true" : undefined;
+      const wait = url.searchParams.has("wait")
+        ? url.searchParams.get("wait") === "true"
+        : undefined;
       const discordUrl = buildDiscordUrl(webhookId, webhookToken, threadId, wait);
 
       // Clone request to avoid consuming the body stream
@@ -113,25 +111,16 @@ export default {
     // Extract query params for Discord
     // wait defaults to undefined (omitted) per design doc — only set when explicitly passed
     const threadId = url.searchParams.get("thread_id") || undefined;
-    const wait = url.searchParams.has("wait")
-      ? url.searchParams.get("wait") === "true"
-      : undefined;
+    const wait = url.searchParams.has("wait") ? url.searchParams.get("wait") === "true" : undefined;
 
     // Determine if chunking is needed
-    const hasEmbeds =
-      Array.isArray(payload.embeds) && payload.embeds.length > 0;
+    const hasEmbeds = Array.isArray(payload.embeds) && payload.embeds.length > 0;
     const content = payload.content;
-    const hasContent =
-      typeof content === "string" && content.length > 0;
+    const hasContent = typeof content === "string" && content.length > 0;
 
     if (!hasContent || hasEmbeds) {
       // Passthrough — send as-is
-      const discordUrl = buildDiscordUrl(
-        webhookId,
-        webhookToken,
-        threadId,
-        wait,
-      );
+      const discordUrl = buildDiscordUrl(webhookId, webhookToken, threadId, wait);
       const resp = await fetch(discordUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json", "User-Agent": USER_AGENT },
@@ -151,35 +140,26 @@ export default {
     // Chunk the content
     let chunks: string[];
     try {
-      chunks = chunkContent(content!, config);
+      chunks = chunkContent(content as string, config);
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : "Chunking failed";
+      const msg = err instanceof Error ? err.message : "Chunking failed";
       return jsonError(msg, 422);
     }
 
     // Build payload array — first chunk keeps all metadata, rest are content-only
-    const chunkPayloads: DiscordWebhookPayload[] = chunks.map(
-      (text, i) => {
-        if (i === 0) {
-          return { ...payload, content: text };
-        }
-        // Subsequent chunks: content only + preserve username/avatar
-        const sub: DiscordWebhookPayload = { content: text };
-        if (payload.username) sub.username = payload.username;
-        if (payload.avatar_url) sub.avatar_url = payload.avatar_url;
-        return sub;
-      },
-    );
+    const chunkPayloads: DiscordWebhookPayload[] = chunks.map((text, i) => {
+      if (i === 0) {
+        return { ...payload, content: text };
+      }
+      // Subsequent chunks: content only + preserve username/avatar
+      const sub: DiscordWebhookPayload = { content: text };
+      if (payload.username) sub.username = payload.username;
+      if (payload.avatar_url) sub.avatar_url = payload.avatar_url;
+      return sub;
+    });
 
     // Send chunks to Discord
-    const result = await sendChunks(
-      chunkPayloads,
-      webhookId,
-      webhookToken,
-      threadId,
-      wait,
-    );
+    const result = await sendChunks(chunkPayloads, webhookId, webhookToken, threadId, wait);
 
     if (!result.success) {
       const errorBody: Record<string, unknown> = {

@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildDiscordUrl,
   sendChunks,
-  validateContentType,
   updateRateLimitState,
+  validateContentType,
 } from "../src/discord";
 
 describe("buildDiscordUrl", () => {
@@ -49,15 +49,11 @@ describe("validateContentType", () => {
   });
 
   it("returns multipart for multipart/form-data", () => {
-    expect(validateContentType("multipart/form-data; boundary=---")).toBe(
-      "multipart",
-    );
+    expect(validateContentType("multipart/form-data; boundary=---")).toBe("multipart");
   });
 
   it("returns null for unsupported type", () => {
-    expect(
-      validateContentType("application/x-www-form-urlencoded"),
-    ).toBeNull();
+    expect(validateContentType("application/x-www-form-urlencoded")).toBeNull();
   });
 
   it("returns null for empty string", () => {
@@ -127,13 +123,7 @@ describe("sendChunks", () => {
   it("sends single chunk successfully with wait=true", async () => {
     fetchMock.mockResolvedValueOnce(mockDiscordResponse("msg1"));
 
-    const result = await sendChunks(
-      [{ content: "hello" }],
-      "123",
-      "token",
-      undefined,
-      true,
-    );
+    const result = await sendChunks([{ content: "hello" }], "123", "token", undefined, true);
 
     expect(result.success).toBe(true);
     expect(result.chunksSent).toBe(1);
@@ -153,11 +143,7 @@ describe("sendChunks", () => {
   it("sends single chunk without wait when wait=undefined", async () => {
     fetchMock.mockResolvedValueOnce(mockDiscordResponse("msg1"));
 
-    const result = await sendChunks(
-      [{ content: "hello" }],
-      "123",
-      "token",
-    );
+    const result = await sendChunks([{ content: "hello" }], "123", "token");
 
     expect(result.success).toBe(true);
     expect(result.firstMessageObject).toBeNull();
@@ -195,12 +181,7 @@ describe("sendChunks", () => {
       .mockResolvedValueOnce(mockDiscordResponse("msg1"))
       .mockResolvedValueOnce(mockDiscordResponse("msg2"));
 
-    await sendChunks(
-      [{ content: "chunk1" }, { content: "chunk2" }],
-      "123",
-      "token",
-      "thread999",
-    );
+    await sendChunks([{ content: "chunk1" }, { content: "chunk2" }], "123", "token", "thread999");
 
     expect(fetchMock.mock.calls[0][0]).toContain("thread_id=thread999");
     expect(fetchMock.mock.calls[1][0]).toContain("thread_id=thread999");
@@ -216,13 +197,7 @@ describe("sendChunks", () => {
       )
       .mockResolvedValueOnce(mockDiscordResponse("msg1"));
 
-    const result = await sendChunks(
-      [{ content: "hello" }],
-      "123",
-      "token",
-      undefined,
-      true,
-    );
+    const result = await sendChunks([{ content: "hello" }], "123", "token", undefined, true);
 
     expect(result.success).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -230,18 +205,10 @@ describe("sendChunks", () => {
 
   it("retries on 500 with default delay", async () => {
     fetchMock
-      .mockResolvedValueOnce(
-        new Response("Internal Server Error", { status: 500 }),
-      )
+      .mockResolvedValueOnce(new Response("Internal Server Error", { status: 500 }))
       .mockResolvedValueOnce(mockDiscordResponse("msg1"));
 
-    const result = await sendChunks(
-      [{ content: "hello" }],
-      "123",
-      "token",
-      undefined,
-      true,
-    );
+    const result = await sendChunks([{ content: "hello" }], "123", "token", undefined, true);
 
     expect(result.success).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -250,12 +217,8 @@ describe("sendChunks", () => {
   it("returns partial failure when retry also fails", async () => {
     fetchMock
       .mockResolvedValueOnce(mockDiscordResponse("msg1", { remaining: 4 }))
-      .mockResolvedValueOnce(
-        new Response("error", { status: 500 }),
-      )
-      .mockResolvedValueOnce(
-        new Response("error again", { status: 500 }),
-      );
+      .mockResolvedValueOnce(new Response("error", { status: 500 }))
+      .mockResolvedValueOnce(new Response("error again", { status: 500 }));
 
     const result = await sendChunks(
       [{ content: "chunk1" }, { content: "chunk2" }],
@@ -276,16 +239,10 @@ describe("sendChunks", () => {
     // When remaining === 1 and there are more chunks, sendChunks should
     // still complete successfully (the delay happens internally via sleep)
     fetchMock
-      .mockResolvedValueOnce(
-        mockDiscordResponse("msg1", { remaining: 1, resetAfter: "0.001" }),
-      )
+      .mockResolvedValueOnce(mockDiscordResponse("msg1", { remaining: 1, resetAfter: "0.001" }))
       .mockResolvedValueOnce(mockDiscordResponse("msg2", { remaining: 4 }));
 
-    const result = await sendChunks(
-      [{ content: "chunk1" }, { content: "chunk2" }],
-      "123",
-      "token",
-    );
+    const result = await sendChunks([{ content: "chunk1" }, { content: "chunk2" }], "123", "token");
 
     expect(result.success).toBe(true);
     expect(result.chunksSent).toBe(2);
@@ -295,32 +252,20 @@ describe("sendChunks", () => {
 
   it("does NOT preemptively delay when remaining > 1", async () => {
     fetchMock
-      .mockResolvedValueOnce(
-        mockDiscordResponse("msg1", { remaining: 3 }),
-      )
+      .mockResolvedValueOnce(mockDiscordResponse("msg1", { remaining: 3 }))
       .mockResolvedValueOnce(mockDiscordResponse("msg2", { remaining: 2 }));
 
-    const result = await sendChunks(
-      [{ content: "chunk1" }, { content: "chunk2" }],
-      "123",
-      "token",
-    );
+    const result = await sendChunks([{ content: "chunk1" }, { content: "chunk2" }], "123", "token");
 
     expect(result.success).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("does NOT delay when remaining === 1 on last chunk", async () => {
-    fetchMock.mockResolvedValueOnce(
-      mockDiscordResponse("msg1", { remaining: 1, resetAfter: "2" }),
-    );
+    fetchMock.mockResolvedValueOnce(mockDiscordResponse("msg1", { remaining: 1, resetAfter: "2" }));
 
     const start = Date.now();
-    const result = await sendChunks(
-      [{ content: "only chunk" }],
-      "123",
-      "token",
-    );
+    const result = await sendChunks([{ content: "only chunk" }], "123", "token");
     const elapsed = Date.now() - start;
 
     expect(result.success).toBe(true);
@@ -336,13 +281,7 @@ describe("sendChunks", () => {
       }),
     );
 
-    const result = await sendChunks(
-      [{ content: "hello" }],
-      "123",
-      "token",
-      undefined,
-      true,
-    );
+    const result = await sendChunks([{ content: "hello" }], "123", "token", undefined, true);
 
     expect(result.success).toBe(true);
     // firstMessageObject should be null (parse failed gracefully)

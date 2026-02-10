@@ -1,9 +1,5 @@
-import type {
-  DiscordWebhookPayload,
-  SendResult,
-  RateLimitState,
-} from "./types";
-import { DEFAULT_RETRY_DELAY_MS, DEFAULT_RATE_LIMIT_DELAY_MS, USER_AGENT } from "./types";
+import type { DiscordWebhookPayload, RateLimitState, SendResult } from "./types";
+import { DEFAULT_RATE_LIMIT_DELAY_MS, DEFAULT_RETRY_DELAY_MS, USER_AGENT } from "./types";
 
 export function validateContentType(ct: string): "json" | "multipart" | null {
   if (ct.startsWith("application/json")) return "json";
@@ -30,7 +26,7 @@ export function updateRateLimitState(response: Response): RateLimitState {
   const remaining = response.headers.get("X-RateLimit-Remaining");
   const resetAfter = response.headers.get("X-RateLimit-Reset-After");
   return {
-    remaining: remaining !== null ? parseInt(remaining) : null,
+    remaining: remaining !== null ? parseInt(remaining, 10) : null,
     resetAfterMs: resetAfter !== null ? parseFloat(resetAfter) * 1000 : null,
   };
 }
@@ -70,11 +66,7 @@ export async function sendChunks(
     const webhookUrl = buildDiscordUrl(webhookId, webhookToken, threadId, chunkWait);
 
     // Preemptive delay when exactly 1 request remains in rate limit window AND more chunks to send
-    if (
-      rateLimit.remaining !== null &&
-      rateLimit.remaining === 1 &&
-      hasMoreChunks
-    ) {
+    if (rateLimit.remaining !== null && rateLimit.remaining === 1 && hasMoreChunks) {
       const delay = rateLimit.resetAfterMs ?? DEFAULT_RATE_LIMIT_DELAY_MS;
       await sleep(delay);
     }
@@ -98,9 +90,13 @@ export async function sendChunks(
       if (response.status === 429) {
         const retryAfter = response.headers.get("Retry-After");
         delayMs = retryAfter ? parseFloat(retryAfter) * 1000 : DEFAULT_RETRY_DELAY_MS;
-        console.warn(`[discord-chunker] Rate limited (429) on chunk ${i + 1}/${chunks.length}, retrying after ${delayMs}ms`);
+        console.warn(
+          `[discord-chunker] Rate limited (429) on chunk ${i + 1}/${chunks.length}, retrying after ${delayMs}ms`,
+        );
       } else {
-        console.warn(`[discord-chunker] Discord error ${failedStatus} on chunk ${i + 1}/${chunks.length}, retrying after ${delayMs}ms`);
+        console.warn(
+          `[discord-chunker] Discord error ${failedStatus} on chunk ${i + 1}/${chunks.length}, retrying after ${delayMs}ms`,
+        );
       }
 
       // Drain error response body before retrying
@@ -115,7 +111,9 @@ export async function sendChunks(
 
       if (!response.ok) {
         const retryStatus = response.status;
-        console.error(`[discord-chunker] Retry failed (${retryStatus}) on chunk ${i + 1}/${chunks.length}, giving up`);
+        console.error(
+          `[discord-chunker] Retry failed (${retryStatus}) on chunk ${i + 1}/${chunks.length}, giving up`,
+        );
         await response.text(); // Drain retry error body
         return {
           success: false,

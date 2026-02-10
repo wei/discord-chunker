@@ -1,5 +1,5 @@
-import { SELF, fetchMock } from "cloudflare:test";
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { fetchMock, SELF } from "cloudflare:test";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 /**
  * Integration tests that exercise the full worker pipeline (routing → validation
@@ -135,14 +135,11 @@ describe("Integration", () => {
       .intercept({ path: /^\/api\/webhooks\//, method: "POST" })
       .reply(500, "Internal Server Error");
 
-    const resp = await SELF.fetch(
-      "https://example.com/api/webhook/123/token?wait=true",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: "hello world" }),
-      },
-    );
+    const resp = await SELF.fetch("https://example.com/api/webhook/123/token?wait=true", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: "hello world" }),
+    });
 
     expect(resp.status).toBe(502);
     const body = await resp.json<{ error: string; chunks_sent: number; chunks_total: number }>();

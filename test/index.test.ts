@@ -1,5 +1,5 @@
 import { SELF } from "cloudflare:test";
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 describe("Worker", () => {
   it("rejects non-POST requests", async () => {
@@ -38,14 +38,11 @@ describe("Worker", () => {
   });
 
   it("rejects invalid config", async () => {
-    const resp = await SELF.fetch(
-      "https://example.com/api/webhook/123/token?max_chars=50",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: "hello" }),
-      },
-    );
+    const resp = await SELF.fetch("https://example.com/api/webhook/123/token?max_chars=50", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: "hello" }),
+    });
     expect(resp.status).toBe(400);
     const body = await resp.json<{ error: string }>();
     expect(body.error).toContain("max_chars");

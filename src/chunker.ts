@@ -107,10 +107,7 @@ function scanParenAwareBreakpoints(window: string): {
 
 // ---- Markdown-aware chunker ----
 
-function pickSafeBreakIndex(
-  window: string,
-  spans: FenceSpan[],
-): number {
+function pickSafeBreakIndex(window: string, spans: FenceSpan[]): number {
   const { lastNewline, lastWhitespace } = scanParenAwareBreakpoints(window);
 
   // Prefer newline if it's a safe fence break
@@ -168,10 +165,7 @@ function chunkMarkdownText(text: string, limit: number): string[] {
         const maxIdxIfAlreadyNewline = limit - closeLine.length;
 
         let pickedNewline = false;
-        let lastNl = remaining.lastIndexOf(
-          "\n",
-          Math.max(0, maxIdxIfAlreadyNewline - 1),
-        );
+        let lastNl = remaining.lastIndexOf("\n", Math.max(0, maxIdxIfAlreadyNewline - 1));
         while (lastNl !== -1) {
           const candidateBreak = lastNl + 1;
           if (candidateBreak < minProgressIdx) break;
@@ -196,27 +190,19 @@ function chunkMarkdownText(text: string, limit: number): string[] {
 
       const fenceAtBreak = findFenceSpanAt(spans, breakIdx);
       fenceToSplit =
-        fenceAtBreak && fenceAtBreak.start === initialFence.start
-          ? fenceAtBreak
-          : undefined;
+        fenceAtBreak && fenceAtBreak.start === initialFence.start ? fenceAtBreak : undefined;
     }
 
     let rawChunk = remaining.slice(0, breakIdx);
     if (!rawChunk) break;
 
-    const brokeOnSeparator =
-      breakIdx < remaining.length && /\s/.test(remaining[breakIdx]);
-    const nextStart = Math.min(
-      remaining.length,
-      breakIdx + (brokeOnSeparator ? 1 : 0),
-    );
+    const brokeOnSeparator = breakIdx < remaining.length && /\s/.test(remaining[breakIdx]);
+    const nextStart = Math.min(remaining.length, breakIdx + (brokeOnSeparator ? 1 : 0));
     let next = remaining.slice(nextStart);
 
     if (fenceToSplit) {
       const closeLine = `${fenceToSplit.indent}${fenceToSplit.marker}`;
-      rawChunk = rawChunk.endsWith("\n")
-        ? `${rawChunk}${closeLine}`
-        : `${rawChunk}\n${closeLine}`;
+      rawChunk = rawChunk.endsWith("\n") ? `${rawChunk}${closeLine}` : `${rawChunk}\n${closeLine}`;
       next = `${fenceToSplit.openLine}\n${next}`;
     } else {
       // Trim trailing whitespace when not splitting fence
@@ -236,11 +222,7 @@ function chunkMarkdownText(text: string, limit: number): string[] {
 
 const FENCE_REGEX = /^( {0,3})(`{3,}|~{3,})(.*)$/;
 
-function applyLineLimit(
-  chunks: string[],
-  maxLines: number,
-  maxChars: number,
-): string[] {
+function applyLineLimit(chunks: string[], maxLines: number, _maxChars: number): string[] {
   if (maxLines <= 0) return chunks;
 
   const result: string[] = [];
@@ -308,10 +290,7 @@ function applyLineLimit(
  * Returns array of content strings, each safe to send as a Discord message.
  * Throws if any resulting chunk exceeds DISCORD_CHAR_LIMIT characters.
  */
-export function chunkContent(
-  content: string,
-  config: ChunkerConfig,
-): string[] {
+export function chunkContent(content: string, config: ChunkerConfig): string[] {
   if (!content) return [content];
 
   const lineCount = content.split("\n").length;
@@ -335,7 +314,7 @@ export function chunkContent(
     if (chunk.length > DISCORD_CHAR_LIMIT) {
       throw new Error(
         `Unable to chunk: resulting chunk exceeds ${DISCORD_CHAR_LIMIT} character limit (got ${chunk.length}). ` +
-        `This can happen when a single token or line exceeds max_chars with no valid break point.`
+          `This can happen when a single token or line exceeds max_chars with no valid break point.`,
       );
     }
   }

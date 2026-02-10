@@ -12,7 +12,11 @@ export function parseConfig(params: URLSearchParams): ChunkerConfig {
 }
 
 export function validateConfig(config: ChunkerConfig): string | null {
-  if (!Number.isInteger(config.maxChars) || config.maxChars < 100 || config.maxChars > DISCORD_CHAR_LIMIT) {
+  if (
+    !Number.isInteger(config.maxChars) ||
+    config.maxChars < 100 ||
+    config.maxChars > DISCORD_CHAR_LIMIT
+  ) {
     return `max_chars must be an integer between 100 and ${DISCORD_CHAR_LIMIT}`;
   }
   if (!Number.isInteger(config.maxLines) || config.maxLines < 0) {
@@ -24,7 +28,7 @@ export function validateConfig(config: ChunkerConfig): string | null {
 function parseIntParam(raw: string | null, fallback: number): number {
   if (raw === null) return fallback;
   const num = Number(raw);
-  if (isNaN(num)) return fallback;
+  if (Number.isNaN(num)) return fallback;
   // Reject non-integers explicitly (e.g. 1999.9)
   if (!Number.isInteger(num)) return num; // Let validateConfig catch it
   return num;

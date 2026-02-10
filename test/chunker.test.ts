@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { chunkContent } from "../src/chunker";
 
 describe("chunkContent", () => {
@@ -23,7 +23,7 @@ describe("chunkContent", () => {
   });
 
   it("splits at paragraph boundary before word boundary", () => {
-    const text = "A".repeat(80) + "\n\n" + "B".repeat(80);
+    const text = `${"A".repeat(80)}\n\n${"B".repeat(80)}`;
     const chunks = chunkContent(text, { maxChars: 100, maxLines: 0 });
     expect(chunks[0]).toBe("A".repeat(80));
     expect(chunks[1]).toBe("B".repeat(80));
@@ -39,7 +39,7 @@ describe("chunkContent", () => {
 
   // --- Code fence preservation ---
   it("preserves code fences across chunks", () => {
-    const code = "```js\n" + "x = 1;\n".repeat(50) + "```";
+    const code = `\`\`\`js\n${"x = 1;\n".repeat(50)}\`\`\``;
     const chunks = chunkContent(code, { maxChars: 200, maxLines: 0 });
     // First chunk should end with closing fence
     expect(chunks[0]).toMatch(/```$/);
@@ -73,7 +73,7 @@ describe("chunkContent", () => {
 
   // --- Parentheses ---
   it("avoids breaking inside parentheses", () => {
-    const text = "call(" + "x, ".repeat(30) + "y)";
+    const text = `call(${"x, ".repeat(30)}y)`;
     const chunks = chunkContent(text, { maxChars: 60, maxLines: 0 });
     // Should not break mid-parentheses if possible
     for (const chunk of chunks) {
@@ -87,10 +87,7 @@ describe("chunkContent", () => {
   // --- Line limit + code fence interaction ---
   it("preserves code fences when line-splitting across chunks", () => {
     // Code block with 20 lines of code — will need splitting with max_lines=8
-    const code =
-      "```typescript\n" +
-      Array(20).fill("const x = 1;").join("\n") +
-      "\n```";
+    const code = `\`\`\`typescript\n${Array(20).fill("const x = 1;").join("\n")}\n\`\`\``;
     const chunks = chunkContent(code, { maxChars: 2000, maxLines: 8 });
     expect(chunks.length).toBeGreaterThan(1);
 
