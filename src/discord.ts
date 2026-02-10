@@ -3,6 +3,7 @@ import type {
   SendResult,
   RateLimitState,
 } from "./types";
+import { DEFAULT_RETRY_DELAY_MS, DEFAULT_RATE_LIMIT_DELAY_MS } from "./types";
 
 export function validateContentType(ct: string): "json" | "multipart" | null {
   if (ct.startsWith("application/json")) return "json";
@@ -25,7 +26,7 @@ export function buildDiscordUrl(
   return params.length > 0 ? `${base}?${params.join("&")}` : base;
 }
 
-function updateRateLimitState(response: Response): RateLimitState {
+export function updateRateLimitState(response: Response): RateLimitState {
   const remaining = response.headers.get("X-RateLimit-Remaining");
   const resetAfter = response.headers.get("X-RateLimit-Reset-After");
   return {
@@ -36,6 +37,15 @@ function updateRateLimitState(response: Response): RateLimitState {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function safeJsonParse(response: Response): Promise<Record<string, unknown> | null> {
+  try {
+    return (await response.json()) as Record<string, unknown>;
+  } catch {
+    // Discord returned non-JSON (e.g. HTML error page during outage)
+    return null;
+  }
 }
 
 export async function sendChunks(
@@ -57,13 +67,13 @@ export async function sendChunks(
     const chunkWait = isFirst ? wait : undefined;
     const webhookUrl = buildDiscordUrl(webhookId, webhookToken, threadId, chunkWait);
 
-    // Preemptive delay when near rate limit AND more chunks remain
+    // Preemptive delay when exactly 1 request remains in rate limit window AND more chunks to send
     if (
       rateLimit.remaining !== null &&
-      rateLimit.remaining <= 1 &&
+      rateLimit.remaining === 1 &&
       hasMoreChunks
     ) {
-      const delay = rateLimit.resetAfterMs ?? 2000;
+      const delay = rateLimit.resetAfterMs ?? DEFAULT_RATE_LIMIT_DELAY_MS;
       await sleep(delay);
     }
 
@@ -75,11 +85,12 @@ export async function sendChunks(
 
     // Single retry for any error
     if (!response.ok) {
-      let delayMs = 1000;
+      const failedStatus = response.status;
+      let delayMs = DEFAULT_RETRY_DELAY_MS;
 
       if (response.status === 429) {
         const retryAfter = response.headers.get("Retry-After");
-        delayMs = retryAfter ? parseFloat(retryAfter) * 1000 : 1000;
+        delayMs = retryAfter ? parseFloat(retryAfter) * 1000 : DEFAULT_RETRY_DELAY_MS;
       }
 
       // Drain error response body before retrying
@@ -93,12 +104,14 @@ export async function sendChunks(
       });
 
       if (!response.ok) {
+        const retryStatus = response.status;
         await response.text(); // Drain retry error body
         return {
           success: false,
           firstMessageObject,
           chunksSent: i,
           chunksTotal: chunks.length,
+          lastError: `Discord API error: ${retryStatus} after retry (initial: ${failedStatus})`,
         };
       }
     }
@@ -107,8 +120,7 @@ export async function sendChunks(
 
     // Capture first message object if wait=true; drain all other response bodies
     if (isFirst && wait) {
-      firstMessageObject =
-        (await response.json()) as Record<string, unknown>;
+      firstMessageObject = await safeJsonParse(response);
     } else {
       await response.text(); // Drain response body to free connection
     }
@@ -119,5 +131,6 @@ export async function sendChunks(
     firstMessageObject,
     chunksSent: chunks.length,
     chunksTotal: chunks.length,
+    lastError: null,
   };
 }

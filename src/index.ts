@@ -6,8 +6,7 @@ import {
   validateContentType,
 } from "./discord";
 import type { DiscordWebhookPayload } from "./types";
-
-const MAX_INPUT_BYTES = 102400; // 100KB
+import { MAX_INPUT_BYTES } from "./types";
 
 function jsonError(error: string, status: number): Response {
   return new Response(JSON.stringify({ error }), {
@@ -26,10 +25,11 @@ async function passthroughToDiscord(
   const wait = params.has("wait") ? params.get("wait") === "true" : undefined;
   const url = buildDiscordUrl(webhookId, webhookToken, threadId, wait);
 
+  // Clone request to avoid consuming the body stream
   return fetch(url, {
     method: "POST",
     headers: request.headers,
-    body: request.body,
+    body: request.clone().body,
   });
 }
 
@@ -91,10 +91,11 @@ export default {
     }
 
     // Extract query params for Discord
+    // wait defaults to undefined (omitted) per design doc — only set when explicitly passed
     const threadId = url.searchParams.get("thread_id") || undefined;
     const wait = url.searchParams.has("wait")
       ? url.searchParams.get("wait") === "true"
-      : true; // Default to wait=true
+      : undefined;
 
     // Determine if chunking is needed
     const hasEmbeds =
@@ -162,7 +163,7 @@ export default {
 
     if (!result.success) {
       const errorBody: Record<string, unknown> = {
-        error: "Failed to send all chunks to Discord",
+        error: result.lastError ?? "Failed to send all chunks to Discord",
         chunks_sent: result.chunksSent,
         chunks_total: result.chunksTotal,
       };

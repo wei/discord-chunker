@@ -25,6 +25,12 @@ describe("parseConfig", () => {
     expect(config.maxChars).toBe(1950);
     expect(config.maxLines).toBe(17);
   });
+
+  it("preserves float values for validation to catch", () => {
+    const params = new URLSearchParams("max_chars=1999.9");
+    const config = parseConfig(params);
+    expect(config.maxChars).toBe(1999.9);
+  });
 });
 
 describe("validateConfig", () => {
@@ -40,11 +46,27 @@ describe("validateConfig", () => {
     expect(validateConfig({ maxChars: 2001, maxLines: 17 })).toContain("max_chars");
   });
 
+  it("rejects non-integer max_chars", () => {
+    expect(validateConfig({ maxChars: 1999.9, maxLines: 17 })).toContain("max_chars");
+  });
+
+  it("rejects non-integer max_lines", () => {
+    expect(validateConfig({ maxChars: 1950, maxLines: 5.5 })).toContain("max_lines");
+  });
+
   it("rejects negative max_lines", () => {
     expect(validateConfig({ maxChars: 1950, maxLines: -1 })).toContain("max_lines");
   });
 
   it("allows max_lines=0", () => {
     expect(validateConfig({ maxChars: 1950, maxLines: 0 })).toBeNull();
+  });
+
+  it("allows max_chars=2000", () => {
+    expect(validateConfig({ maxChars: 2000, maxLines: 0 })).toBeNull();
+  });
+
+  it("allows max_chars=100", () => {
+    expect(validateConfig({ maxChars: 100, maxLines: 0 })).toBeNull();
   });
 });

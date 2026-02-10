@@ -1,4 +1,5 @@
 import type { ChunkerConfig } from "./types";
+import { DISCORD_CHAR_LIMIT } from "./types";
 
 // ---- Fence parsing (from OpenClaw src/markdown/fences.ts) ----
 
@@ -304,7 +305,7 @@ function applyLineLimit(
 /**
  * Chunk content for Discord delivery.
  * Returns array of content strings, each safe to send as a Discord message.
- * Throws if any resulting chunk exceeds 2000 characters (Discord's hard limit).
+ * Throws if any resulting chunk exceeds DISCORD_CHAR_LIMIT characters.
  */
 export function chunkContent(
   content: string,
@@ -328,11 +329,11 @@ export function chunkContent(
     chunks = applyLineLimit(chunks, config.maxLines, config.maxChars);
   }
 
-  // Step 3: Sanity check — no chunk may exceed 2000 chars (Discord hard limit)
+  // Step 3: Sanity check — no chunk may exceed Discord's hard limit
   for (const chunk of chunks) {
-    if (chunk.length > 2000) {
+    if (chunk.length > DISCORD_CHAR_LIMIT) {
       throw new Error(
-        `Unable to chunk: resulting chunk exceeds 2000 character limit (got ${chunk.length}). ` +
+        `Unable to chunk: resulting chunk exceeds ${DISCORD_CHAR_LIMIT} character limit (got ${chunk.length}). ` +
         `This can happen when a single token or line exceeds max_chars with no valid break point.`
       );
     }
