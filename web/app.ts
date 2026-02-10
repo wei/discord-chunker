@@ -119,7 +119,10 @@ function renderChunks(chunks: string[]): void {
       divider.className = "dc-chunk-divider";
       const span = document.createElement("span");
       span.textContent = `Chunk ${i + 1} of ${chunks.length}`;
-      divider.appendChild(span);
+      const badge = document.createElement("span");
+      badge.className = "dc-message-chunk-badge";
+      badge.textContent = `${chunks[i].length} chars`;
+      divider.append(span, badge);
       group.appendChild(divider);
     }
 

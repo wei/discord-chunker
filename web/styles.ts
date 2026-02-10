@@ -236,12 +236,12 @@ body {
   font-weight: 500;
   background: var(--brand);
   color: #fff;
-  padding: 0.0625rem 0.275rem;
+  padding: 0.125rem 0.275rem;
   border-radius: 0.1875rem;
   text-transform: uppercase;
-  vertical-align: top;
+  vertical-align: middle;
   position: relative;
-  top: 0.1rem;
+  top: -0.1rem;
 }
 .dc-message-timestamp {
   font-size: 0.75rem;
@@ -256,6 +256,7 @@ body {
   white-space: normal;
   word-break: break-word;
   overflow-wrap: break-word;
+  margin-top: 0.125rem;
 }
 
 /* === Discord Markdown Rendering (preview) === */
@@ -282,6 +283,12 @@ body {
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.25;
+  margin-bottom: 0.25rem;
+}
+/* Collapse blank-line gaps that follow headings — the heading's own
+   margin-bottom provides enough breathing room. */
+.dc-markdown .dc-md-header + .dc-md-gap {
+  height: 0;
 }
 .dc-markdown .dc-md-header-1 {
   font-size: 1.5rem;
@@ -409,14 +416,19 @@ body {
   padding: 0.5rem 1rem;
   margin: 0.25rem 0;
 }
-.dc-chunk-divider::before,
+.dc-chunk-divider::before {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
 .dc-chunk-divider::after {
   content: '';
   flex: 1;
   height: 1px;
   background: var(--border-subtle);
 }
-.dc-chunk-divider span {
+.dc-chunk-divider span:not(.dc-message-chunk-badge) {
   font-size: 0.6875rem;
   font-weight: 500;
   color: var(--text-muted);
