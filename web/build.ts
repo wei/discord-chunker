@@ -16,9 +16,12 @@ async function build() {
 
   const js = result.outputFiles[0].text;
   const html = readFileSync("web/index.html", "utf-8");
+  const faviconBase64 = readFileSync("web/assets/favicon-64.png").toString("base64");
+  const faviconDataUri = `data:image/png;base64,${faviconBase64}`;
   const output = html
     .replace("/* __INJECTED_CSS__ */", STYLES)
-    .replace("/* __INJECTED_JS__ */", js);
+    .replace("/* __INJECTED_JS__ */", js)
+    .replace("/* __INJECTED_FAVICON__ */", faviconDataUri);
 
   mkdirSync("dist", { recursive: true });
   writeFileSync("dist/chunker.html", output);
