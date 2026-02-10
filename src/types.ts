@@ -37,7 +37,7 @@ export interface RateLimitState {
 export const MAX_INPUT_BYTES = 102_400; // 100KB body size limit
 export const DISCORD_CHAR_LIMIT = 2000; // Discord's hard message limit
 export const DEFAULT_MAX_CHARS = 1950; // Safe default under Discord limit
-export const DEFAULT_MAX_LINES = 17; // Matches OpenClaw default
+export const DEFAULT_MAX_LINES = 20; // Readability line limit
 export const DEFAULT_RETRY_DELAY_MS = 1000;
 export const DEFAULT_RATE_LIMIT_DELAY_MS = 2000;
 export const USER_AGENT = `${pkg.name}/${pkg.version}`;

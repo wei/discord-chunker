@@ -6,7 +6,7 @@ describe("parseConfig", () => {
     const params = new URLSearchParams();
     const config = parseConfig(params);
     expect(config.maxChars).toBe(1950);
-    expect(config.maxLines).toBe(17);
+    expect(config.maxLines).toBe(20);
   });
 
   it("parses max_chars", () => {
@@ -23,7 +23,7 @@ describe("parseConfig", () => {
     const params = new URLSearchParams("max_chars=abc&max_lines=xyz");
     const config = parseConfig(params);
     expect(config.maxChars).toBe(1950);
-    expect(config.maxLines).toBe(17);
+    expect(config.maxLines).toBe(20);
   });
 
   it("preserves float values for validation to catch", () => {

@@ -16,7 +16,8 @@ Messages under 1950 characters pass through unchanged. Longer messages are split
 - Preserves code blocks (``` fences)
 - Respects paragraph boundaries
 - Avoids breaking inside parentheses
-- Handles line count limits
+- Readability-based line limit (blank lines and code fence delimiters don't count)
+- Orphan protection prevents tiny trailing chunks (1-2 lines)
 
 ## Health Endpoint
 
@@ -42,12 +43,12 @@ The response also includes the `X-Service` header set to the service User-Agent 
 | Param | Default | Range | Description |
 |-------|---------|-------|-------------|
 | `max_chars` | 1950 | 100-2000 | Max characters per chunk |
-| `max_lines` | 17 | ≥ 0 (0 = unlimited) | Max lines per chunk |
+| `max_lines` | 20 | ≥ 0 (0 = unlimited) | Readability line limit per chunk |
 | `thread_id` | — | — | Forward to thread |
 | `wait` | omitted | true/false | Return message object of the first chunk (omitted = Discord default) |
 
 ```bash
-POST /api/webhook/123/token?max_chars=1500&max_lines=20&thread_id=999
+POST /api/webhook/123/token?max_chars=1500&max_lines=25&thread_id=999
 ```
 
 ## Prerequisites

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chunkContent } from "../src/chunker";
+import { chunkContent, countReadableLines } from "../src/chunker";
 
 describe("chunkContent", () => {
   // --- Passthrough cases ---
@@ -126,5 +126,81 @@ describe("chunkContent", () => {
     for (const chunk of chunks) {
       expect(chunk.length).toBeLessThanOrEqual(2000);
     }
+  });
+
+  // --- Readability-based line counting ---
+  it("blank lines do not count toward line limit", () => {
+    // 10 content lines separated by blank lines = 10 readable lines, 19 raw lines
+    const lines = Array(10).fill("content line").join("\n\n");
+    const chunks = chunkContent(lines, { maxChars: 50000, maxLines: 10 });
+    expect(chunks).toEqual([lines]); // All fits in one chunk
+  });
+
+  it("code fence lines do not count toward line limit", () => {
+    // 8 readable lines + 2 fence lines + 2 blank lines = 12 raw lines, 8 readable
+    const text = [
+      "line 1",
+      "line 2",
+      "",
+      "```js",
+      "code 1",
+      "code 2",
+      "code 3",
+      "```",
+      "",
+      "line 3",
+      "line 4",
+      "line 5",
+    ].join("\n");
+    const chunks = chunkContent(text, { maxChars: 50000, maxLines: 8 });
+    expect(chunks).toEqual([text]); // 8 readable lines fits in maxLines=8
+  });
+
+  it("splits when readable line count exceeds limit", () => {
+    // 25 readable lines, no blanks, no fences
+    const text = Array(25).fill("readable line").join("\n");
+    const chunks = chunkContent(text, { maxChars: 50000, maxLines: 10 });
+    expect(chunks.length).toBeGreaterThan(1);
+    for (const chunk of chunks) {
+      expect(countReadableLines(chunk)).toBeLessThanOrEqual(10);
+    }
+  });
+
+  // --- Orphan protection ---
+  it("does not leave orphan chunks with 1-2 readable lines", () => {
+    // 12 readable lines, maxLines=10 → should NOT split into 10 + 2
+    const text = Array(12).fill("content line").join("\n");
+    const chunks = chunkContent(text, { maxChars: 50000, maxLines: 10 });
+    // Should keep as one chunk (12 lines is close enough, orphan protection kicks in)
+    expect(chunks).toEqual([text]);
+  });
+
+  it("does split when remaining is above orphan threshold", () => {
+    // 15 readable lines, maxLines=10 → should split into 10 + 5 (5 > MIN_ORPHAN_LINES)
+    const text = Array(15).fill("content line").join("\n");
+    const chunks = chunkContent(text, { maxChars: 50000, maxLines: 10 });
+    expect(chunks.length).toBe(2);
+    expect(countReadableLines(chunks[0])).toBe(10);
+    expect(countReadableLines(chunks[1])).toBe(5);
+  });
+});
+
+describe("countReadableLines", () => {
+  it("counts only non-blank, non-fence lines", () => {
+    expect(countReadableLines("hello\nworld")).toBe(2);
+    expect(countReadableLines("hello\n\nworld")).toBe(2);
+    expect(countReadableLines("")).toBe(0);
+    expect(countReadableLines("```js\ncode\n```")).toBe(1);
+    expect(countReadableLines("\n\n\n")).toBe(0);
+  });
+
+  it("does not count blank lines inside code fences", () => {
+    const text = "```\ncode\n\nmore code\n```";
+    expect(countReadableLines(text)).toBe(2); // "code" and "more code"
+  });
+
+  it("does not count fence lines even when unclosed", () => {
+    const text = "```js\ncode here\nmore code";
+    expect(countReadableLines(text)).toBe(2);
   });
 });

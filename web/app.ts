@@ -1,6 +1,6 @@
 // web/app.ts
 import { createAnimation } from "./animation";
-import { chunkContent, parseConfig } from "./chunker";
+import { chunkContent, countReadableLines, DEFAULT_MAX_LINES, parseConfig } from "./chunker";
 import { generateCurl } from "./curl-generator";
 import { renderDiscordMarkdown } from "./markdown";
 import { convertWebhookUrl, extractWebhookParts, isValidWebhookUrl } from "./url-converter";
@@ -100,10 +100,15 @@ function renderChunks(chunks: string[]): void {
 
   const count = document.createElement("div");
   count.className = "chunk-count";
-  count.textContent =
-    chunks.length === 1
-      ? "1 message \u2014 no chunking needed"
-      : `${chunks.length} messages will be sent`;
+  if (chunks.length === 1) {
+    count.textContent = "1 message \u2014 no chunking needed";
+  } else {
+    count.textContent = `${chunks.length} messages will be sent`;
+    const note = document.createElement("div");
+    note.className = "chunk-count-note";
+    note.textContent = `Some chunks may be under 2000 characters due to the ${DEFAULT_MAX_LINES}-line readability limit.`;
+    count.appendChild(note);
+  }
   container.appendChild(count);
 
   const group = document.createElement("div");
@@ -120,7 +125,7 @@ function renderChunks(chunks: string[]): void {
       span.textContent = `Chunk ${i + 1} of ${chunks.length}`;
       const badge = document.createElement("span");
       badge.className = "dc-message-chunk-badge";
-      badge.textContent = `${chunks[i].length} chars`;
+      badge.textContent = `${chunks[i].length} chars \u2022 ${countReadableLines(chunks[i])} lines`;
       divider.append(span, badge);
       group.appendChild(divider);
     }
@@ -153,7 +158,7 @@ function renderChunks(chunks: string[]): void {
 
       const badge = document.createElement("span");
       badge.className = "dc-message-chunk-badge";
-      badge.textContent = `${chunks[i].length} chars`;
+      badge.textContent = `${chunks[i].length} chars \u2022 ${countReadableLines(chunks[i])} lines`;
 
       header.append(username, tag, timestamp, badge);
 

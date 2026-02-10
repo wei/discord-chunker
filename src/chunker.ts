@@ -218,61 +218,170 @@ function chunkMarkdownText(text: string, limit: number): string[] {
   return chunks;
 }
 
-// ---- Line limit re-splitting ----
+// ---- Readable line counting ----
 
 const FENCE_REGEX = /^( {0,3})(`{3,}|~{3,})(.*)$/;
+
+/**
+ * Returns true if a line is "readable" — i.e. it contains meaningful content.
+ * Blank/whitespace-only lines and code fence delimiters do NOT count as readable.
+ */
+function isReadableLine(line: string, _insideFence: boolean): boolean {
+  // Blank / whitespace-only lines never count
+  if (line.trim() === "") return false;
+  // Code fence opening/closing lines don't count
+  if (FENCE_REGEX.test(line)) return false;
+  return true;
+}
+
+/**
+ * Count "readable" lines in a text string.
+ * Excludes blank lines and code fence delimiter lines.
+ */
+export function countReadableLines(text: string): number {
+  if (!text) return 0;
+  const lines = text.split("\n");
+  let count = 0;
+  let insideFence = false;
+  let fenceMarkerChar = "";
+  let fenceMarkerLen = 0;
+
+  for (const line of lines) {
+    const fenceMatch = line.match(FENCE_REGEX);
+    if (fenceMatch) {
+      const marker = fenceMatch[2];
+      const mChar = marker[0];
+      const mLen = marker.length;
+      if (!insideFence) {
+        insideFence = true;
+        fenceMarkerChar = mChar;
+        fenceMarkerLen = mLen;
+      } else if (mChar === fenceMarkerChar && mLen >= fenceMarkerLen) {
+        insideFence = false;
+      }
+      // Fence lines themselves don't count
+      continue;
+    }
+
+    if (isReadableLine(line, insideFence)) {
+      count++;
+    }
+  }
+  return count;
+}
+
+// Minimum readable lines for the last chunk — prevents orphan fragments
+const MIN_ORPHAN_LINES = 3;
+
+// ---- Line limit re-splitting ----
 
 function applyLineLimit(chunks: string[], maxLines: number, _maxChars: number): string[] {
   if (maxLines <= 0) return chunks;
 
   const result: string[] = [];
   for (const chunk of chunks) {
-    const lines = chunk.split("\n");
-    if (lines.length <= maxLines) {
+    if (countReadableLines(chunk) <= maxLines) {
       result.push(chunk);
       continue;
     }
 
-    // Re-split at line boundaries — fence-aware single pass
+    const lines = chunk.split("\n");
+
+    // Re-split at line boundaries — fence-aware single pass using readable line count
     let current: string[] = [];
+    let readableCount = 0;
     let insideFence = false;
     let fenceOpenLine = "";
     let fenceMarkerChar = "";
     let fenceMarkerLen = 0;
 
-    for (const line of lines) {
-      // Check if we need to split BEFORE adding this line
-      if (current.length >= maxLines && current.length > 0) {
+    for (let li = 0; li < lines.length; li++) {
+      const line = lines[li];
+
+      // Determine if this line is readable BEFORE adding
+      const fenceMatch = line.match(FENCE_REGEX);
+      let lineIsReadable = false;
+      let isOpenFence = false;
+      let isCloseFence = false;
+
+      if (fenceMatch) {
+        const marker = fenceMatch[2];
+        const mChar = marker[0];
+        const mLen = marker.length;
+        if (!insideFence) {
+          isOpenFence = true;
+        } else if (mChar === fenceMarkerChar && mLen >= fenceMarkerLen) {
+          isCloseFence = true;
+        }
+        // Fence lines are never readable
+      } else {
+        lineIsReadable = isReadableLine(line, insideFence);
+      }
+
+      // Would adding this readable line exceed the limit?
+      const wouldExceed = lineIsReadable && readableCount >= maxLines && current.length > 0;
+
+      // Before splitting, look ahead: count remaining readable lines after this point
+      if (wouldExceed) {
+        let remainingReadable = 0;
+        let peekFence = insideFence;
+        let peekFenceChar = fenceMarkerChar;
+        let peekFenceLen = fenceMarkerLen;
+        for (let j = li; j < lines.length; j++) {
+          const peekLine = lines[j];
+          const peekMatch = peekLine.match(FENCE_REGEX);
+          if (peekMatch) {
+            const pm = peekMatch[2];
+            if (!peekFence) {
+              peekFence = true;
+              peekFenceChar = pm[0];
+              peekFenceLen = pm.length;
+            } else if (pm[0] === peekFenceChar && pm.length >= peekFenceLen) {
+              peekFence = false;
+            }
+          } else if (isReadableLine(peekLine, peekFence)) {
+            remainingReadable++;
+          }
+        }
+
+        // Orphan protection: if remaining would be too small, don't split
+        if (remainingReadable < MIN_ORPHAN_LINES) {
+          // Just add all remaining lines to current chunk and stop
+          for (let j = li; j < lines.length; j++) {
+            current.push(lines[j]);
+          }
+          break;
+        }
+
+        // Perform the split
         if (insideFence) {
-          // Close the fence in the current chunk before splitting
           const closeMarker = fenceMarkerChar.repeat(fenceMarkerLen);
           current.push(closeMarker);
           result.push(current.join("\n"));
-          // Reopen the fence in the next chunk
           current = [fenceOpenLine];
+          readableCount = 0;
         } else {
           result.push(current.join("\n"));
           current = [];
+          readableCount = 0;
         }
       }
 
       current.push(line);
 
       // Track fence state AFTER adding the line
-      const fenceMatch = line.match(FENCE_REGEX);
-      if (fenceMatch) {
+      if (isOpenFence && fenceMatch) {
         const marker = fenceMatch[2];
-        const mChar = marker[0];
-        const mLen = marker.length;
+        insideFence = true;
+        fenceOpenLine = line;
+        fenceMarkerChar = marker[0];
+        fenceMarkerLen = marker.length;
+      } else if (isCloseFence) {
+        insideFence = false;
+      }
 
-        if (!insideFence) {
-          insideFence = true;
-          fenceOpenLine = line;
-          fenceMarkerChar = mChar;
-          fenceMarkerLen = mLen;
-        } else if (mChar === fenceMarkerChar && mLen >= fenceMarkerLen) {
-          insideFence = false;
-        }
+      if (lineIsReadable) {
+        readableCount++;
       }
     }
 
@@ -293,9 +402,9 @@ function applyLineLimit(chunks: string[], maxLines: number, _maxChars: number): 
 export function chunkContent(content: string, config: ChunkerConfig): string[] {
   if (!content) return [content];
 
-  const lineCount = content.split("\n").length;
+  const readableLineCount = countReadableLines(content);
   const needsCharSplit = content.length > config.maxChars;
-  const needsLineSplit = config.maxLines > 0 && lineCount > config.maxLines;
+  const needsLineSplit = config.maxLines > 0 && readableLineCount > config.maxLines;
 
   if (!needsCharSplit && !needsLineSplit) {
     return [content];
