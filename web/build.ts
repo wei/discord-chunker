@@ -10,6 +10,7 @@ async function build() {
     minify: true,
     format: "iife",
     target: ["es2022"],
+    loader: { ".md": "text" },
     write: false,
   });
 
