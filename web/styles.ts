@@ -1,6 +1,6 @@
 // web/styles.ts — Discord-themed CSS
 export const STYLES = `
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap");
 
 /* === Discord Design Tokens === */
 :root {
@@ -22,7 +22,7 @@ export const STYLES = `
   --text-link: #00AFF4;
   --border-subtle: #3f4147;
   --border-strong: #4e5058;
-  --font-primary: "Plus Jakarta Sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-primary: "DM Sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-code: "Consolas", Menlo, Monaco, ui-monospace, monospace;
   --radius-sm: 3px;
   --radius-md: 8px;
@@ -30,12 +30,13 @@ export const STYLES = `
 
 /* === Reset & Base === */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 16px; }
+html { font-size: 14px; }
 body {
   font-family: var(--font-primary);
+  font-weight: 400;
   background: var(--bg-tertiary);
   color: var(--text-normal);
-  line-height: 1.375;
+  line-height: 1.5;
   min-height: 100vh;
 }
 
@@ -81,7 +82,7 @@ body {
 }
 .section-title {
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.02em;
   color: var(--text-secondary);
@@ -184,7 +185,7 @@ body {
 .chunk-results { margin-top: 1rem; }
 .chunk-count {
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.02em;
   color: var(--text-muted);
@@ -221,7 +222,7 @@ body {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
-  line-height: 1.375;
+  line-height: 1.5;
 }
 .dc-message-username {
   font-size: 1rem;
@@ -250,7 +251,7 @@ body {
 
 .dc-message-body {
   font-size: 1rem;
-  line-height: 1.375;
+  line-height: 1.5;
   color: var(--text-normal);
   white-space: normal;
   word-break: break-word;
@@ -269,12 +270,12 @@ body {
 }
 
 .dc-markdown .dc-md-paragraph {
-  line-height: 1.375;
+  line-height: 1.5;
   margin: 0;
 }
 
 .dc-markdown .dc-md-gap {
-  height: 1.375em; /* one empty line, matching Discord line-height */
+  height: 1.5em; /* one empty line, matching base line-height */
 }
 
 .dc-markdown .dc-md-header {
@@ -344,7 +345,7 @@ body {
 .dc-markdown pre code {
   font-family: var(--font-code);
   font-size: 0.875rem;
-  line-height: 1.375;
+  line-height: 1.5;
   color: var(--text-normal);
   background: transparent;
 }
@@ -373,7 +374,7 @@ body {
 .dc-message-chunk-badge {
   display: inline-block;
   font-size: 0.6875rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   background: var(--bg-tertiary);
   padding: 1px 6px;
@@ -417,7 +418,7 @@ body {
 }
 .dc-chunk-divider span {
   font-size: 0.6875rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   text-transform: uppercase;
   white-space: nowrap;
@@ -442,7 +443,7 @@ body {
 }
 .flow-label {
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.02em;
   color: var(--text-secondary);

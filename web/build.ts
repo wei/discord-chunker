@@ -31,8 +31,8 @@ async function build() {
       "Build error: HTML contains multiple </script> tags — minified JS likely corrupted",
     );
   }
-  if (!output.includes('"Plus Jakarta Sans"')) {
-    throw new Error("Build error: missing Plus Jakarta Sans font reference");
+  if (!output.includes('"DM Sans"')) {
+    throw new Error("Build error: missing DM Sans font reference");
   }
   if (!output.includes('href="/favicon.png"')) {
     throw new Error("Build error: missing favicon link");
