@@ -223,6 +223,8 @@ function renderTextSegment(lines: string[]): string {
 
     if (line.trim().length === 0) {
       flushParagraph();
+      // Preserve Discord's blank-line spacing explicitly.
+      parts.push('<div class="dc-md-gap"></div>');
       index += 1;
       continue;
     }

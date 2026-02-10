@@ -60,6 +60,13 @@ describe("renderDiscordMarkdown", () => {
     );
   });
 
+  test("preserves blank-line spacing (Discord-style) via explicit gap blocks", () => {
+    const html = renderDiscordMarkdown(["A", "", "B"].join("\n"));
+
+    // Our renderer should explicitly represent empty lines so spacing matches Discord.
+    expect(html).toContain('<div class="dc-md-gap"></div>');
+  });
+
   test("escapes raw HTML by default", () => {
     const html = renderDiscordMarkdown("<script>alert('xss')</script>");
     expect(html).toContain("&lt;script&gt;");

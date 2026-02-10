@@ -1,5 +1,7 @@
 // web/styles.ts — Discord-themed CSS
 export const STYLES = `
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+
 /* === Discord Design Tokens === */
 :root {
   --bg-tertiary: #1e1f22;
@@ -20,10 +22,8 @@ export const STYLES = `
   --text-link: #00AFF4;
   --border-subtle: #3f4147;
   --border-strong: #4e5058;
-  --font-primary: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-code: "Consolas", "Andale Mono WT", "Andale Mono", "Lucida Console",
-    "Lucida Sans Typewriter", "DejaVu Sans Mono", "Bitstream Vera Sans Mono",
-    "Liberation Mono", "Nimbus Mono L", Monaco, "Courier New", Courier, monospace;
+  --font-primary: "Plus Jakarta Sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-code: "Consolas", Menlo, Monaco, ui-monospace, monospace;
   --radius-sm: 3px;
   --radius-md: 8px;
 }
@@ -264,11 +264,17 @@ body {
 }
 
 .dc-markdown > * + * {
-  margin-top: 0.35rem;
+  /* Spacing between blocks is handled by explicit blank-line gap nodes. */
+  margin-top: 0;
 }
 
 .dc-markdown .dc-md-paragraph {
   line-height: 1.375;
+  margin: 0;
+}
+
+.dc-markdown .dc-md-gap {
+  height: 1.375em; /* one empty line, matching Discord line-height */
 }
 
 .dc-markdown .dc-md-header {
@@ -302,9 +308,9 @@ body {
 }
 .dc-markdown .dc-md-list-ul { list-style-type: disc; }
 .dc-markdown .dc-md-list-ol { list-style-type: decimal; }
-.dc-markdown .dc-md-list li + li { margin-top: 0.15rem; }
+.dc-markdown .dc-md-list li + li { margin-top: 0; }
 .dc-markdown .dc-md-list-nested {
-  margin-top: 0.2rem;
+  margin-top: 0;
   padding-left: 1.25rem;
 }
 
