@@ -59,21 +59,22 @@ function renderChunks(chunks: string[]): void {
   const ts = formatTimestamp();
 
   for (let i = 0; i < chunks.length; i++) {
-    // Chunk divider between messages
-    if (i > 0) {
-      const divider = document.createElement("div");
-      divider.className = "dc-chunk-divider";
-      const span = document.createElement("span");
-      span.textContent = `Chunk ${i + 1} of ${chunks.length}`;
-      const badge = document.createElement("span");
-      badge.className = "dc-message-chunk-badge";
-      badge.textContent = `${chunks[i].length} chars \u2022 ${countLines(chunks[i])} lines`;
-      divider.append(span, badge);
-      group.appendChild(divider);
-    }
-
     const msg = document.createElement("div");
     msg.className = i === 0 ? "dc-message" : "dc-message dc-message-continuation";
+
+    const pill = document.createElement("div");
+    pill.className = "dc-chunk-pill";
+
+    const label = document.createElement("span");
+    label.className = "dc-chunk-pill-label";
+    label.textContent = `Chunk ${i + 1}`;
+
+    const stats = document.createElement("span");
+    stats.className = "dc-chunk-pill-stats";
+    stats.textContent = `${chunks[i].length} characters \u2022 ${countLines(chunks[i])} lines`;
+
+    pill.append(label, stats);
+    msg.appendChild(pill);
 
     if (i === 0) {
       const avatar = document.createElement("div");
@@ -98,11 +99,7 @@ function renderChunks(chunks: string[]): void {
       timestamp.className = "dc-message-timestamp";
       timestamp.textContent = ts;
 
-      const badge = document.createElement("span");
-      badge.className = "dc-message-chunk-badge";
-      badge.textContent = `${chunks[i].length} chars \u2022 ${countLines(chunks[i])} lines`;
-
-      header.append(username, tag, timestamp, badge);
+      header.append(username, tag, timestamp);
 
       const body = document.createElement("div");
       body.className = "dc-message-body dc-markdown";

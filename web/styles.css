@@ -247,7 +247,7 @@ body {
   padding: 0.125rem 1rem 0.125rem 4.5rem;
   position: relative;
   min-height: 2.75rem;
-  margin-top: 1.0625rem;
+  margin-top: 0.5rem;
 }
 .dc-message:hover {
   background: var(--bg-modifier-hover);
@@ -489,32 +489,52 @@ body {
   padding-top: 0.125rem;
 }
 
-/* Chunk separator line */
-.dc-chunk-divider {
+/* Chunk separator pill */
+.dc-chunk-pill {
+  position: absolute;
+  right: 0.25rem;
+  top: 0.25rem;
+  display: flex;
+  flex-direction: row-reverse; /* Put label on the right to anchor it */
+  align-items: center;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.dc-message:hover .dc-chunk-pill {
+  background: var(--bg-modifier-active);
+  color: var(--text-normal);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.dc-chunk-pill-label {
+  flex-shrink: 0;
+}
+
+.dc-chunk-pill-stats {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 400;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  margin: 0.25rem 0;
 }
-.dc-chunk-divider::before {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--border-subtle);
-}
-.dc-chunk-divider::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--border-subtle);
-}
-.dc-chunk-divider span:not(.dc-message-chunk-badge) {
-  font-size: 0.6875rem;
-  font-weight: 500;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  white-space: nowrap;
+
+.dc-message:hover .dc-chunk-pill-stats {
+  max-width: 300px;
+  opacity: 1;
+  margin-right: 0.4rem; /* Spacing since we are row-reverse */
 }
 
 /* === Comparison Animation === */

@@ -1,6 +1,7 @@
 # 🚀 Discord Markdown Showcase
 
-Welcome to the ultimate guide for **Discord-flavored Markdown**! This sample demonstrates how the chunker preserves formatting across message boundaries.
+Welcome to the ultimate guide for **Discord-flavored Markdown**!
+This sample demonstrates how the chunker preserves formatting across message boundaries.
 
 ## 📝 Text Styling
 You can combine styles in *various* ways:
