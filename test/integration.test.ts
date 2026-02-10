@@ -37,7 +37,7 @@ describe("Integration", () => {
   it("passes through embeds without chunking", async () => {
     mockDiscordWebhook();
 
-    const resp = await SELF.fetch("https://example.com/webhook/123/token?wait=true", {
+    const resp = await SELF.fetch("https://example.com/api/webhook/123/token?wait=true", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -55,7 +55,7 @@ describe("Integration", () => {
   it("passes through empty content without chunking", async () => {
     mockDiscordWebhook();
 
-    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+    const resp = await SELF.fetch("https://example.com/api/webhook/123/token", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: "" }),
@@ -68,7 +68,7 @@ describe("Integration", () => {
   it("passes through null content without chunking", async () => {
     mockDiscordWebhook();
 
-    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+    const resp = await SELF.fetch("https://example.com/api/webhook/123/token", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: null }),
@@ -80,7 +80,7 @@ describe("Integration", () => {
   it("passes through short content without chunking", async () => {
     mockDiscordWebhook();
 
-    const resp = await SELF.fetch("https://example.com/webhook/123/token?wait=true", {
+    const resp = await SELF.fetch("https://example.com/api/webhook/123/token?wait=true", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: "short message" }),
@@ -111,7 +111,7 @@ describe("Integration", () => {
 
     const longContent = "word ".repeat(500); // ~2500 chars
     const resp = await SELF.fetch(
-      "https://example.com/webhook/123/token?max_chars=1500&wait=true",
+      "https://example.com/api/webhook/123/token?max_chars=1500&wait=true",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -136,7 +136,7 @@ describe("Integration", () => {
       .reply(500, "Internal Server Error");
 
     const resp = await SELF.fetch(
-      "https://example.com/webhook/123/token?wait=true",
+      "https://example.com/api/webhook/123/token?wait=true",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -154,7 +154,7 @@ describe("Integration", () => {
   it("returns 204 when wait is not set", async () => {
     mockDiscordWebhook();
 
-    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+    const resp = await SELF.fetch("https://example.com/api/webhook/123/token", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: "hello" }),
@@ -168,7 +168,7 @@ describe("Integration", () => {
     mockDiscordWebhook();
 
     const resp = await SELF.fetch(
-      "https://example.com/webhook/123/token?thread_id=999&wait=true",
+      "https://example.com/api/webhook/123/token?thread_id=999&wait=true",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -188,7 +188,7 @@ describe("Integration", () => {
     // For now, verify the endpoint processes normally
     mockDiscordWebhook();
 
-    const resp = await SELF.fetch("https://example.com/webhook/123/token?wait=true", {
+    const resp = await SELF.fetch("https://example.com/api/webhook/123/token?wait=true", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: "hello" }),
@@ -203,7 +203,7 @@ describe("Integration", () => {
     const expectedHeader = `discord-chunker/${pkg.version}`;
 
     // 1. Success case
-    const resp204 = await SELF.fetch("https://example.com/webhook/123/token", {
+    const resp204 = await SELF.fetch("https://example.com/api/webhook/123/token", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: "hello" }),
@@ -211,7 +211,7 @@ describe("Integration", () => {
     expect(resp204.headers.get("X-Service")).toBe(expectedHeader);
 
     // 2. Error case (404)
-    const resp404 = await SELF.fetch("https://example.com/webhook/invalid/path", {
+    const resp404 = await SELF.fetch("https://example.com/api/webhook/invalid/path", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: "hello" }),
@@ -224,7 +224,7 @@ describe("Integration", () => {
       .intercept({ path: /^\/api\/webhooks\//, method: "POST" })
       .reply(200, JSON.stringify({ ok: true }), { headers: { "X-Test": "original" } });
 
-    const respMultipart = await SELF.fetch("https://example.com/webhook/123/token", {
+    const respMultipart = await SELF.fetch("https://example.com/api/webhook/123/token", {
       method: "POST",
       headers: { "Content-Type": "multipart/form-data; boundary=---" },
       body: "-----",

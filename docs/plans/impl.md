@@ -4,7 +4,7 @@
 
 **Goal:** Build a stateless Cloudflare Workers proxy that chunks long Discord webhook messages using OpenClaw's proven algorithm.
 
-**Architecture:** CF Worker intercepts POST to `/webhook/{id}/{token}`, parses JSON, chunks content if needed, sends chunks sequentially to Discord with proactive rate limit tracking. Multipart requests pass through unchanged.
+**Architecture:** CF Worker intercepts POST to `/api/webhook/{id}/{token}`, parses JSON, chunks content if needed, sends chunks sequentially to Discord with proactive rate limit tracking. Multipart requests pass through unchanged.
 
 **Tech Stack:** TypeScript, Cloudflare Workers (Wrangler), Vitest for testing
 
@@ -1041,7 +1041,7 @@ import { SELF, env } from "cloudflare:test";
 
 describe("Worker", () => {
   it("rejects non-POST requests", async () => {
-    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+    const resp = await SELF.fetch("https://example.com/api/webhook/123/token", {
       method: "GET",
     });
     expect(resp.status).toBe(405);
@@ -1057,7 +1057,7 @@ describe("Worker", () => {
   });
 
   it("rejects unsupported Content-Type", async () => {
-    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+    const resp = await SELF.fetch("https://example.com/api/webhook/123/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: "content=hello",
@@ -1067,7 +1067,7 @@ describe("Worker", () => {
 
   it("rejects payload over 100KB", async () => {
     const bigContent = JSON.stringify({ content: "A".repeat(110000) });
-    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+    const resp = await SELF.fetch("https://example.com/api/webhook/123/token", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: bigContent,
@@ -1077,7 +1077,7 @@ describe("Worker", () => {
 
   it("rejects invalid config", async () => {
     const resp = await SELF.fetch(
-      "https://example.com/webhook/123/token?max_chars=50",
+      "https://example.com/api/webhook/123/token?max_chars=50",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1146,10 +1146,10 @@ export default {
 
     const url = new URL(request.url);
 
-    // Route: /webhook/{id}/{token}
-    const match = url.pathname.match(/^\/webhook\/(\d+)\/([^/]+)$/);
+    // Route: /api/webhook/{id}/{token}
+    const match = url.pathname.match(/^\/api\/webhook\/(\d+)\/([^/]+)$/);
     if (!match) {
-      return jsonError("Invalid path. Use: /webhook/{id}/{token}", 404);
+      return jsonError("Invalid path. Use: /api/webhook/{id}/{token}", 404);
     }
 
     const [, webhookId, webhookToken] = match;
@@ -1324,7 +1324,7 @@ import { SELF } from "cloudflare:test";
 
 describe("Integration", () => {
   it("passes through short content and returns Discord response", async () => {
-    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+    const resp = await SELF.fetch("https://example.com/api/webhook/123/token", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: "short message" }),
@@ -1336,7 +1336,7 @@ describe("Integration", () => {
   it("handles chunking for long content", async () => {
     const longContent = "word ".repeat(500); // ~2500 chars
     const resp = await SELF.fetch(
-      "https://example.com/webhook/123/token?max_chars=500",
+      "https://example.com/api/webhook/123/token?max_chars=500",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1351,7 +1351,7 @@ describe("Integration", () => {
     // Actually this would still chunk fine with hard cut. Need a pathological case.
     // For now, test that the endpoint accepts and processes normally.
     const resp = await SELF.fetch(
-      "https://example.com/webhook/123/token",
+      "https://example.com/api/webhook/123/token",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1398,7 +1398,7 @@ Replace your Discord webhook URL:
 
 ```diff
 - https://discord.com/api/webhooks/123/token
-+ https://discord-chunker.YOUR-DOMAIN.workers.dev/webhook/123/token
++ https://discord.git.ci/api/webhook/123/token
 ```
 
 Messages under 1950 characters pass through unchanged. Longer messages are split intelligently:
@@ -1418,7 +1418,7 @@ Messages under 1950 characters pass through unchanged. Longer messages are split
 | `wait` | true | true/false | Return message object |
 
 ```bash
-POST /webhook/123/token?max_chars=1500&max_lines=20&thread_id=999
+POST /api/webhook/123/token?max_chars=1500&max_lines=20&thread_id=999
 ```
 
 ## Deploy
@@ -1469,7 +1469,7 @@ npx wrangler deploy
 **Step 3: Test with real webhook**
 
 ```bash
-curl -X POST "https://discord-chunker.YOUR-DOMAIN.workers.dev/webhook/REAL_ID/REAL_TOKEN" \
+curl -X POST "https://discord.git.ci/api/webhook/REAL_ID/REAL_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"content": "Hello from discord-chunker!"}'
 ```
@@ -1477,7 +1477,7 @@ curl -X POST "https://discord-chunker.YOUR-DOMAIN.workers.dev/webhook/REAL_ID/RE
 **Step 4: Test chunking with long message**
 
 ```bash
-curl -X POST "https://discord-chunker.YOUR-DOMAIN.workers.dev/webhook/REAL_ID/REAL_TOKEN?max_chars=500" \
+curl -X POST "https://discord.git.ci/api/webhook/REAL_ID/REAL_TOKEN?max_chars=500" \
   -H "Content-Type: application/json" \
   -d "{\"content\": \"$(python3 -c 'print("test line\\n" * 100)')\"}"
 ```

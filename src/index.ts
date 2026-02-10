@@ -54,10 +54,10 @@ export default {
 
     const url = new URL(request.url);
 
-    // Route: /webhook/{id}/{token}
-    const match = url.pathname.match(/^\/webhook\/(\d+)\/([^/]+)$/);
+    // Route: /api/webhook/{id}/{token}
+    const match = url.pathname.match(/^\/api\/webhook\/(\d+)\/([^/]+)$/);
     if (!match) {
-      return jsonError("Invalid path. Use: /webhook/{id}/{token}", 404);
+      return jsonError("Invalid path. Use: /api/webhook/{id}/{token}", 404);
     }
 
     const [, webhookId, webhookToken] = match;

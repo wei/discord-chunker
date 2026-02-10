@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 
 describe("Worker", () => {
   it("rejects non-POST requests", async () => {
-    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+    const resp = await SELF.fetch("https://example.com/api/webhook/123/token", {
       method: "GET",
     });
     expect(resp.status).toBe(405);
@@ -19,7 +19,7 @@ describe("Worker", () => {
   });
 
   it("rejects unsupported Content-Type", async () => {
-    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+    const resp = await SELF.fetch("https://example.com/api/webhook/123/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: "content=hello",
@@ -29,7 +29,7 @@ describe("Worker", () => {
 
   it("rejects payload over 100KB", async () => {
     const bigContent = JSON.stringify({ content: "A".repeat(110000) });
-    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+    const resp = await SELF.fetch("https://example.com/api/webhook/123/token", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: bigContent,
@@ -39,7 +39,7 @@ describe("Worker", () => {
 
   it("rejects invalid config", async () => {
     const resp = await SELF.fetch(
-      "https://example.com/webhook/123/token?max_chars=50",
+      "https://example.com/api/webhook/123/token?max_chars=50",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -52,7 +52,7 @@ describe("Worker", () => {
   });
 
   it("rejects invalid JSON body", async () => {
-    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+    const resp = await SELF.fetch("https://example.com/api/webhook/123/token", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: "not json {{{",

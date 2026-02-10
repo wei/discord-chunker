@@ -8,7 +8,7 @@ Replace your Discord webhook URL:
 
 ```diff
 - https://discord.com/api/webhooks/123/token
-+ https://discord-chunker.YOUR-DOMAIN.workers.dev/webhook/123/token
++ https://discord.git.ci/api/webhook/123/token
 ```
 
 Messages under 1950 characters pass through unchanged. Longer messages are split intelligently:
@@ -28,7 +28,7 @@ Messages under 1950 characters pass through unchanged. Longer messages are split
 | `wait` | omitted | true/false | Return message object of the first chunk (omitted = Discord default) |
 
 ```bash
-POST /webhook/123/token?max_chars=1500&max_lines=20&thread_id=999
+POST /api/webhook/123/token?max_chars=1500&max_lines=20&thread_id=999
 ```
 
 ## Deploy

@@ -21,7 +21,7 @@ Discord webhooks have a 2000-character limit per message. Applications sending l
 ### High-Level Flow
 
 ```
-[Your App] → POST /webhook/{id}/{token}?wait=true&max_chars=1950
+[Your App] → POST /api/webhook/{id}/{token}?wait=true&max_chars=1950
     ↓
 [CF Worker]
   - Detect Content-Type (JSON vs multipart)
@@ -67,16 +67,16 @@ discord-chunker/
 
 ```bash
 # Use defaults
-POST /webhook/123/token
+POST /api/webhook/123/token
 
 # Custom limits
-POST /webhook/123/token?max_chars=1500&max_lines=20
+POST /api/webhook/123/token?max_chars=1500&max_lines=20
 
 # Unlimited lines
-POST /webhook/123/token?max_lines=0
+POST /api/webhook/123/token?max_lines=0
 
 # With thread_id (forwarded to Discord)
-POST /webhook/123/token?thread_id=987654321
+POST /api/webhook/123/token?thread_id=987654321
 ```
 
 ### Validation Rules
@@ -382,7 +382,7 @@ curl -X POST https://discord.com/api/webhooks/123/token \
 
 **After (via proxy):**
 ```bash
-curl -X POST https://discord-chunker.workers.dev/webhook/123/token \
+curl -X POST https://discord-chunker.workers.dev/api/webhook/123/token \
   -H "Content-Type: application/json" \
   -d '{"content": "very long message..."}'
 ```
@@ -390,7 +390,7 @@ curl -X POST https://discord-chunker.workers.dev/webhook/123/token \
 ### With Custom Config
 
 ```bash
-curl -X POST "https://discord-chunker.workers.dev/webhook/123/token?max_chars=1500&max_lines=20" \
+curl -X POST "https://discord-chunker.workers.dev/api/webhook/123/token?max_chars=1500&max_lines=20" \
   -H "Content-Type: application/json" \
   -d '{"content": "very long message..."}'
 ```
@@ -398,7 +398,7 @@ curl -X POST "https://discord-chunker.workers.dev/webhook/123/token?max_chars=15
 ### With Thread ID
 
 ```bash
-curl -X POST "https://discord-chunker.workers.dev/webhook/123/token?thread_id=987654321" \
+curl -X POST "https://discord-chunker.workers.dev/api/webhook/123/token?thread_id=987654321" \
   -H "Content-Type: application/json" \
   -d '{"content": "very long message..."}'
 ```
@@ -408,7 +408,7 @@ curl -X POST "https://discord-chunker.workers.dev/webhook/123/token?thread_id=98
 ```yaml
 - name: Send to Discord
   run: |
-    curl -X POST "https://discord-chunker.workers.dev/webhook/${{ secrets.WEBHOOK_ID }}/${{ secrets.WEBHOOK_TOKEN }}" \
+    curl -X POST "https://discord-chunker.workers.dev/api/webhook/${{ secrets.WEBHOOK_ID }}/${{ secrets.WEBHOOK_TOKEN }}" \
       -H "Content-Type: application/json" \
       -d "{\"content\": \"$(cat build-log.txt)\"}"
 ```
@@ -456,10 +456,10 @@ export default {
 
     const url = new URL(request.url);
 
-    // Route: /webhook/{id}/{token}
-    const match = url.pathname.match(/^\/webhook\/(\d+)\/([^\/]+)$/);
+    // Route: /api/webhook/{id}/{token}
+    const match = url.pathname.match(/^\/api\/webhook\/(\d+)\/([^\/]+)$/);
     if (!match) {
-      return new Response('Invalid path. Use: /webhook/{id}/{token}',
+      return new Response('Invalid path. Use: /api/webhook/{id}/{token}',
         { status: 404 });
     }
 
