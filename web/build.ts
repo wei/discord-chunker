@@ -1,0 +1,25 @@
+// web/build.ts
+
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import * as esbuild from "esbuild";
+
+async function build() {
+  const result = await esbuild.build({
+    entryPoints: ["web/app.ts"],
+    bundle: true,
+    minify: true,
+    format: "iife",
+    target: ["es2022"],
+    write: false,
+  });
+
+  const js = result.outputFiles[0].text;
+  const html = readFileSync("web/index.html", "utf-8");
+  const output = html.replace("/* __INJECTED_JS__ */", js);
+
+  mkdirSync("dist", { recursive: true });
+  writeFileSync("dist/chunker.html", output);
+  console.log(`Built dist/chunker.html (${output.length} bytes)`);
+}
+
+build();

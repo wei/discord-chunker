@@ -7,6 +7,8 @@
     "node": ">=22"
   },
   "scripts": {
+    "build:web": "tsx web/build.ts",
+    "build": "pnpm build:web",
     "dev": "wrangler dev",
     "build": "echo 'No build step required'",
     "deploy": "wrangler deploy",
@@ -20,7 +22,9 @@
     "@biomejs/biome": "^2.3.14",
     "@cloudflare/vitest-pool-workers": "^0.12.10",
     "@cloudflare/workers-types": "^4.20260210.0",
+    "esbuild": "^0.27.3",
     "lefthook": "^2.1.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "~3.2.4",
     "wrangler": "^4.63.0"
