@@ -14,14 +14,16 @@ async function build() {
     write: false,
   });
 
-  const js = result.outputFiles[0].text;
+  const js = result.outputFiles[0].text.replace(/<\/script/gi, "<\\/script");
   const html = readFileSync("web/index.html", "utf-8");
   const faviconBase64 = readFileSync("web/assets/favicon-64.png").toString("base64");
   const faviconDataUri = `data:image/png;base64,${faviconBase64}`;
   const output = html
-    .replace("/* __INJECTED_CSS__ */", STYLES)
-    .replace("/* __INJECTED_JS__ */", js)
-    .replace("/* __INJECTED_FAVICON__ */", faviconDataUri);
+    // Use function replacers so `$` sequences in minified JS/CSS are not treated
+    // as special replacement tokens by String.prototype.replace.
+    .replace("/* __INJECTED_CSS__ */", () => STYLES)
+    .replace("/* __INJECTED_JS__ */", () => js)
+    .replace("/* __INJECTED_FAVICON__ */", () => faviconDataUri);
 
   mkdirSync("dist", { recursive: true });
   writeFileSync("dist/chunker.html", output);

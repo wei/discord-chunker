@@ -84,6 +84,16 @@ function formatTimestamp(): string {
   return `Today at ${now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
 }
 
+function scrollChunkResultsIntoView(): void {
+  const preview = document.getElementById("chunk-results");
+  if (!preview) return;
+
+  // Wait until the rendered layout settles so the scroll target is stable.
+  requestAnimationFrame(() => {
+    preview.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
 function renderChunks(chunks: string[]): void {
   const container = document.getElementById("chunk-results");
   if (!container) return;
@@ -281,6 +291,7 @@ function init(): void {
       const config = getDefaultConfig();
       const chunks = chunkContent(content, config);
       renderChunks(chunks);
+      scrollChunkResultsIntoView();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Chunking failed";
       showStatus(msg, true);
