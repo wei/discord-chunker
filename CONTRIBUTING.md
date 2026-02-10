@@ -2,6 +2,11 @@
 
 Thank you for your interest in contributing! We welcome all contributions to improve this project.
 
+## Prerequisites
+
+- [Node.js](https://nodejs.org/) >= 22
+- [pnpm](https://pnpm.io/)
+
 ## Development Setup
 
 1.  **Clone the repository:**
@@ -14,10 +19,18 @@ Thank you for your interest in contributing! We welcome all contributions to imp
     ```bash
     pnpm install
     ```
+    This also sets up pre-commit hooks via [Lefthook](https://lefthook.dev/) that automatically run linting and tests before each commit.
 
 3.  **Run tests:**
     ```bash
     pnpm test
+    ```
+
+4.  **Lint and format:**
+    ```bash
+    pnpm run lint          # Check for issues
+    pnpm run lint:fix      # Auto-fix issues
+    pnpm run format        # Format code
     ```
 
 ## Pull Request Process

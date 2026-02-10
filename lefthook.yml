@@ -1,0 +1,8 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: lint
+      run: pnpm run lint
+
+    - name: test
+      run: pnpm test
