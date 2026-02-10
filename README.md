@@ -49,4 +49,4 @@ npm test        # Run tests
 
 ## Design
 
-See [design document](docs/plans/2026-02-09-discord-chunker-design.md) for full architecture details.
+See [design document](docs/plans/design.md) for full architecture details.

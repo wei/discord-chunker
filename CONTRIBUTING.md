@@ -6,7 +6,7 @@ Thank you for your interest in contributing! We welcome all contributions to imp
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/discord-chunker.git
+    git clone https://github.com/wei/discord-chunker.git
     cd discord-chunker
     ```
 
