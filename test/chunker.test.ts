@@ -84,6 +84,44 @@ describe("chunkContent", () => {
     }
   });
 
+  // --- Line limit + code fence interaction ---
+  it("preserves code fences when line-splitting across chunks", () => {
+    // Code block with 20 lines of code — will need splitting with max_lines=8
+    const code =
+      "```typescript\n" +
+      Array(20).fill("const x = 1;").join("\n") +
+      "\n```";
+    const chunks = chunkContent(code, { maxChars: 2000, maxLines: 8 });
+    expect(chunks.length).toBeGreaterThan(1);
+
+    // Every chunk should have balanced code fences
+    for (const chunk of chunks) {
+      const fenceMarkers = chunk.match(/^(`{3,}|~{3,})/gm) || [];
+      expect(fenceMarkers.length % 2).toBe(0);
+    }
+  });
+
+  it("preserves fences when line limit splits mid-fence after char split", () => {
+    // Simulate the real bug: chunkMarkdownText produces a chunk with a code fence
+    // that has more lines than max_lines, then applyLineLimit re-splits it
+    const text =
+      "# Header\n\n" +
+      "```js\n" +
+      Array(30).fill("x = 1;").join("\n") +
+      "\n```\n\n" +
+      "Footer text";
+    const chunks = chunkContent(text, { maxChars: 2000, maxLines: 10 });
+    expect(chunks.length).toBeGreaterThan(1);
+
+    for (const chunk of chunks) {
+      // If chunk contains code content, it must have balanced fences
+      if (chunk.includes("x = 1;")) {
+        const fenceMarkers = chunk.match(/^(`{3,}|~{3,})/gm) || [];
+        expect(fenceMarkers.length % 2).toBe(0);
+      }
+    }
+  });
+
   // --- Sanity check ---
   it("no chunk exceeds 2000 characters", () => {
     const text = "A".repeat(5000);

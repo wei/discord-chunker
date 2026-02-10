@@ -25,7 +25,7 @@ Messages under 1950 characters pass through unchanged. Longer messages are split
 | `max_chars` | 1950 | 100-2000 | Max characters per chunk |
 | `max_lines` | 17 | ≥ 0 (0 = unlimited) | Max lines per chunk |
 | `thread_id` | — | — | Forward to thread |
-| `wait` | omitted | true/false | Return message object (omitted = Discord default) |
+| `wait` | omitted | true/false | Return message object of the first chunk (omitted = Discord default) |
 
 ```bash
 POST /webhook/123/token?max_chars=1500&max_lines=20&thread_id=999

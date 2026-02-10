@@ -234,6 +234,8 @@ function chunkMarkdownText(text: string, limit: number): string[] {
 
 // ---- Line limit re-splitting ----
 
+const FENCE_REGEX = /^( {0,3})(`{3,}|~{3,})(.*)$/;
+
 function applyLineLimit(
   chunks: string[],
   maxLines: number,
@@ -243,22 +245,55 @@ function applyLineLimit(
 
   const result: string[] = [];
   for (const chunk of chunks) {
-    const lineCount = chunk.split("\n").length;
-    if (lineCount <= maxLines) {
+    const lines = chunk.split("\n");
+    if (lines.length <= maxLines) {
       result.push(chunk);
       continue;
     }
 
-    // Re-split at line boundaries — single pass
-    const lines = chunk.split("\n");
+    // Re-split at line boundaries — fence-aware single pass
     let current: string[] = [];
+    let insideFence = false;
+    let fenceOpenLine = "";
+    let fenceMarkerChar = "";
+    let fenceMarkerLen = 0;
+
     for (const line of lines) {
+      // Check if we need to split BEFORE adding this line
       if (current.length >= maxLines && current.length > 0) {
-        result.push(current.join("\n"));
-        current = [];
+        if (insideFence) {
+          // Close the fence in the current chunk before splitting
+          const closeMarker = fenceMarkerChar.repeat(fenceMarkerLen);
+          current.push(closeMarker);
+          result.push(current.join("\n"));
+          // Reopen the fence in the next chunk
+          current = [fenceOpenLine];
+        } else {
+          result.push(current.join("\n"));
+          current = [];
+        }
       }
+
       current.push(line);
+
+      // Track fence state AFTER adding the line
+      const fenceMatch = line.match(FENCE_REGEX);
+      if (fenceMatch) {
+        const marker = fenceMatch[2];
+        const mChar = marker[0];
+        const mLen = marker.length;
+
+        if (!insideFence) {
+          insideFence = true;
+          fenceOpenLine = line;
+          fenceMarkerChar = mChar;
+          fenceMarkerLen = mLen;
+        } else if (mChar === fenceMarkerChar && mLen >= fenceMarkerLen) {
+          insideFence = false;
+        }
+      }
     }
+
     if (current.length > 0) {
       result.push(current.join("\n"));
     }
