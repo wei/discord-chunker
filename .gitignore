@@ -2,3 +2,4 @@ node_modules/
 dist/
 .wrangler/
 .pnpm-approved-builds.json
+src/html.ts

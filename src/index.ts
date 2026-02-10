@@ -1,6 +1,7 @@
 import { chunkContent } from "./chunker";
 import { parseConfig, validateConfig } from "./config";
 import { buildDiscordUrl, sendChunks, validateContentType } from "./discord";
+import { CHUNKER_HTML } from "./html";
 import type { DiscordWebhookPayload } from "./types";
 import { MAX_INPUT_BYTES, USER_AGENT } from "./types";
 
@@ -45,6 +46,16 @@ export default {
 
   async handleRequest(request: Request): Promise<Response> {
     const url = new URL(request.url);
+
+    if (url.pathname === "/" && request.method === "GET") {
+      return Response.redirect(`${url.origin}/chunker`, 301);
+    }
+
+    if (url.pathname === "/chunker" && request.method === "GET") {
+      return new Response(CHUNKER_HTML, {
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
+    }
 
     if (url.pathname === "/health" && request.method === "GET") {
       const [serviceName = "unknown", serviceVersion = "unknown"] = USER_AGENT.split("/");
