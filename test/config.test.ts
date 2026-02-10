@@ -35,19 +35,19 @@ describe("parseConfig", () => {
 
 describe("validateConfig", () => {
   it("returns null for valid config", () => {
-    expect(validateConfig({ maxChars: 1950, maxLines: 17 })).toBeNull();
+    expect(validateConfig({ maxChars: 1950, maxLines: 20 })).toBeNull();
   });
 
   it("rejects max_chars below 100", () => {
-    expect(validateConfig({ maxChars: 50, maxLines: 17 })).toContain("max_chars");
+    expect(validateConfig({ maxChars: 50, maxLines: 20 })).toContain("max_chars");
   });
 
   it("rejects max_chars above 2000", () => {
-    expect(validateConfig({ maxChars: 2001, maxLines: 17 })).toContain("max_chars");
+    expect(validateConfig({ maxChars: 2001, maxLines: 20 })).toContain("max_chars");
   });
 
   it("rejects non-integer max_chars", () => {
-    expect(validateConfig({ maxChars: 1999.9, maxLines: 17 })).toContain("max_chars");
+    expect(validateConfig({ maxChars: 1999.9, maxLines: 20 })).toContain("max_chars");
   });
 
   it("rejects non-integer max_lines", () => {
