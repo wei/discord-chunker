@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "wrangler dev",
+    "build": "echo 'No build step required'",
     "deploy": "wrangler deploy",
     "lint": "biome check",
     "lint:fix": "biome check --write",
