@@ -58,7 +58,7 @@ body {
   gap: 0.75rem;
   margin-bottom: 0.75rem;
 }
-.header-logo svg { width: 40px; height: 40px; }
+.header-logo img { width: 40px; height: 40px; border-radius: 8px; }
 .header h1 {
   font-size: 2rem;
   font-weight: 700;

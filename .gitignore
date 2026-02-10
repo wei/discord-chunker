@@ -3,3 +3,4 @@ dist/
 .wrangler/
 .pnpm-approved-builds.json
 src/html.ts
+src/favicon.ts
