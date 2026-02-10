@@ -38,17 +38,17 @@ POST /api/webhook/123/token?max_chars=1500&max_lines=20&thread_id=999
 ## Deploy
 
 ```bash
-npm install
-npx wrangler login
-npx wrangler deploy
+pnpm install
+pnpm wrangler login
+pnpm deploy
 ```
 
 ## Development
 
 ```bash
-npm install
-npm run dev     # Local dev server
-npm test        # Run tests
+pnpm install
+pnpm dev        # Local dev server
+pnpm test       # Run tests
 ```
 
 ## Design

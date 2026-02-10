@@ -12,12 +12,12 @@ Thank you for your interest in contributing! We welcome all contributions to imp
 
 2.  **Install dependencies:**
     ```bash
-    npm install
+    pnpm install
     ```
 
 3.  **Run tests:**
     ```bash
-    npm test
+    pnpm test
     ```
 
 ## Pull Request Process
