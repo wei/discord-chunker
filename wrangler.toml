@@ -5,3 +5,7 @@ compatibility_date = "2025-01-01"
 routes = [
   { pattern = "discord.git.ci", custom_domain = true }
 ]
+
+[observability]
+enabled = true
+invocation_logs = true
