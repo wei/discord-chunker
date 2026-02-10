@@ -98,7 +98,7 @@ The frontend must integrate seamlessly into the existing Cloudflare Worker proje
 ## Technical Notes
 
 - The chunking logic must run client-side in the browser for the dry run feature (shared source, bundled for browser)
-- The "Send" feature makes a real POST request to `discord.git.ci` from the browser (CORS must be handled by the worker)
+- The "Send" feature makes a real POST request to `/api/webhook/:id/:token` from the browser (should not need CORS for the same origin)
 - Route structure:
   - `GET /` → redirect to `/chunker`
   - `GET /chunker` → serve the static page
