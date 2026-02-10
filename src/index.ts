@@ -53,7 +53,10 @@ export default {
 
     if (url.pathname === "/chunker" && request.method === "GET") {
       return new Response(CHUNKER_HTML, {
-        headers: { "Content-Type": "text/html; charset=utf-8" },
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "public, max-age=3600",
+        },
       });
     }
 

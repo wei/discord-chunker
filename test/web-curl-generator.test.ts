@@ -7,16 +7,24 @@ describe("Curl Generator", () => {
     expect(result).toContain("curl -X POST");
     expect(result).toContain("https://discord.git.ci/api/webhook/123/token");
     expect(result).toContain("Content-Type: application/json");
-    expect(result).toContain("Hello world");
+    expect(result).toContain('"content":"Hello world"');
   });
 
   it("escapes single quotes in content", () => {
     const result = generateCurl("https://discord.git.ci/api/webhook/123/token", "it's a test");
-    expect(result).toContain("it\\'s a test");
+    // Single quotes are handled with the shell '\'' idiom
+    expect(result).toContain("it'\\''s a test");
   });
 
   it("handles multiline content", () => {
     const result = generateCurl("https://discord.git.ci/api/webhook/123/token", "line1\nline2");
+    // JSON.stringify escapes newlines as \n
     expect(result).toContain("line1\\nline2");
+  });
+
+  it("escapes double quotes in content", () => {
+    const result = generateCurl("https://discord.git.ci/api/webhook/123/token", 'he said "hello"');
+    // JSON.stringify properly escapes double quotes
+    expect(result).toContain('\\"hello\\"');
   });
 });

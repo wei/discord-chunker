@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertWebhookUrl, isValidWebhookUrl } from "../web/url-converter";
+import { convertWebhookUrl, extractWebhookParts, isValidWebhookUrl } from "../web/url-converter";
 
 describe("URL Converter", () => {
   it("converts discord.com webhook URL to proxy URL", () => {
@@ -30,5 +30,28 @@ describe("URL Converter", () => {
     const input = "https://discord.com/api/webhooks/123/token?wait=true&thread_id=456";
     const result = convertWebhookUrl(input);
     expect(result).toBe("https://discord.git.ci/api/webhook/123/token?wait=true&thread_id=456");
+  });
+});
+
+describe("extractWebhookParts", () => {
+  it("extracts id, token, and search from webhook URL", () => {
+    const result = extractWebhookParts(
+      "https://discord.com/api/webhooks/123/mytoken?thread_id=456&wait=true",
+    );
+    expect(result).toEqual({
+      id: "123",
+      token: "mytoken",
+      search: "?thread_id=456&wait=true",
+    });
+  });
+
+  it("returns empty search when no query params", () => {
+    const result = extractWebhookParts("https://discord.com/api/webhooks/123/mytoken");
+    expect(result).toEqual({ id: "123", token: "mytoken", search: "" });
+  });
+
+  it("returns null for invalid URLs", () => {
+    expect(extractWebhookParts("not a url")).toBeNull();
+    expect(extractWebhookParts("https://example.com/other/path")).toBeNull();
   });
 });

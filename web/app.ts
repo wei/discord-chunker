@@ -1,10 +1,9 @@
 // web/app.ts
-import { chunkContent } from "../src/chunker";
-import { parseConfig } from "../src/config";
-import type { ChunkerConfig } from "../src/types";
 import { createAnimation } from "./animation";
+import type { ChunkerConfig } from "./chunker";
+import { chunkContent, parseConfig } from "./chunker";
 import { generateCurl } from "./curl-generator";
-import { convertWebhookUrl, isValidWebhookUrl } from "./url-converter";
+import { convertWebhookUrl, extractWebhookParts, isValidWebhookUrl } from "./url-converter";
 
 const DEFAULT_EXAMPLE = [
   "# Release Notes v2.5.0",
@@ -169,6 +168,8 @@ function renderChunks(chunks: string[]): void {
   container.appendChild(group);
 }
 
+let statusTimeoutId: ReturnType<typeof setTimeout> | undefined;
+
 function showStatus(message: string, isError: boolean): void {
   let el = document.getElementById("status-toast");
   if (!el) {
@@ -179,7 +180,8 @@ function showStatus(message: string, isError: boolean): void {
   }
   el.textContent = message;
   el.className = `status-toast ${isError ? "error" : "success"} visible`;
-  setTimeout(() => {
+  clearTimeout(statusTimeoutId);
+  statusTimeoutId = setTimeout(() => {
     el.classList.remove("visible");
   }, 3000);
 }
@@ -285,7 +287,8 @@ function init(): void {
   });
 
   // Send
-  document.getElementById("send-btn")?.addEventListener("click", async () => {
+  const sendBtn = document.getElementById("send-btn") as HTMLButtonElement;
+  sendBtn?.addEventListener("click", async () => {
     const content = contentInput.value;
     const webhookUrl = webhookInput.value.trim();
 
@@ -298,15 +301,16 @@ function init(): void {
       return;
     }
 
-    const match = webhookUrl.match(/webhooks\/(\d+)\/([^/?]+)/);
-    if (!match) {
+    const parts = extractWebhookParts(webhookUrl);
+    if (!parts) {
       showStatus("Invalid webhook URL", true);
       return;
     }
-    const [, id, token] = match;
+    const { id, token, search } = parts;
 
+    sendBtn.disabled = true;
     try {
-      const resp = await fetch(`/api/webhook/${id}/${token}`, {
+      const resp = await fetch(`/api/webhook/${id}/${token}${search}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content }),
@@ -321,6 +325,8 @@ function init(): void {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Network error";
       showStatus(`Send failed: ${msg}`, true);
+    } finally {
+      sendBtn.disabled = false;
     }
   });
 

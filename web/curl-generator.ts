@@ -1,9 +1,10 @@
 // web/curl-generator.ts
 export function generateCurl(proxyUrl: string, content: string): string {
-  const escaped = content.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/\n/g, "\\n");
+  const json = JSON.stringify({ content });
+  const shellSafe = json.replace(/'/g, "'\\''");
   return [
     `curl -X POST '${proxyUrl}'`,
     `  -H 'Content-Type: application/json'`,
-    `  -d '{"content": "${escaped}"}'`,
+    `  -d '${shellSafe}'`,
   ].join(" \\\n");
 }
