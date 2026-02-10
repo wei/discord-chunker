@@ -3,7 +3,7 @@ import type {
   SendResult,
   RateLimitState,
 } from "./types";
-import { DEFAULT_RETRY_DELAY_MS, DEFAULT_RATE_LIMIT_DELAY_MS } from "./types";
+import { DEFAULT_RETRY_DELAY_MS, DEFAULT_RATE_LIMIT_DELAY_MS, USER_AGENT } from "./types";
 
 export function validateContentType(ct: string): "json" | "multipart" | null {
   if (ct.startsWith("application/json")) return "json";
@@ -43,7 +43,9 @@ async function safeJsonParse(response: Response): Promise<Record<string, unknown
   try {
     return (await response.json()) as Record<string, unknown>;
   } catch {
-    // Discord returned non-JSON (e.g. HTML error page during outage)
+    // Discord occasionally returns non-JSON responses (e.g. HTML error pages
+    // during outages, or Cloudflare challenge pages). This is expected and
+    // handled gracefully — callers receive null instead of a thrown error.
     return null;
   }
 }
@@ -77,9 +79,14 @@ export async function sendChunks(
       await sleep(delay);
     }
 
+    const fetchHeaders = {
+      "Content-Type": "application/json",
+      "User-Agent": USER_AGENT,
+    };
+
     let response = await fetch(webhookUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: fetchHeaders,
       body: JSON.stringify(chunk),
     });
 
@@ -91,6 +98,9 @@ export async function sendChunks(
       if (response.status === 429) {
         const retryAfter = response.headers.get("Retry-After");
         delayMs = retryAfter ? parseFloat(retryAfter) * 1000 : DEFAULT_RETRY_DELAY_MS;
+        console.warn(`[discord-chunker] Rate limited (429) on chunk ${i + 1}/${chunks.length}, retrying after ${delayMs}ms`);
+      } else {
+        console.warn(`[discord-chunker] Discord error ${failedStatus} on chunk ${i + 1}/${chunks.length}, retrying after ${delayMs}ms`);
       }
 
       // Drain error response body before retrying
@@ -99,12 +109,13 @@ export async function sendChunks(
 
       response = await fetch(webhookUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: fetchHeaders,
         body: JSON.stringify(chunk),
       });
 
       if (!response.ok) {
         const retryStatus = response.status;
+        console.error(`[discord-chunker] Retry failed (${retryStatus}) on chunk ${i + 1}/${chunks.length}, giving up`);
         await response.text(); // Drain retry error body
         return {
           success: false,

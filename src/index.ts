@@ -6,7 +6,7 @@ import {
   validateContentType,
 } from "./discord";
 import type { DiscordWebhookPayload } from "./types";
-import { MAX_INPUT_BYTES } from "./types";
+import { MAX_INPUT_BYTES, USER_AGENT } from "./types";
 
 function jsonError(error: string, status: number): Response {
   return new Response(JSON.stringify({ error }), {
@@ -26,9 +26,11 @@ async function passthroughToDiscord(
   const url = buildDiscordUrl(webhookId, webhookToken, threadId, wait);
 
   // Clone request to avoid consuming the body stream
+  const headers = new Headers(request.headers);
+  headers.set("User-Agent", USER_AGENT);
   return fetch(url, {
     method: "POST",
-    headers: request.headers,
+    headers,
     body: request.clone().body,
   });
 }
@@ -69,9 +71,10 @@ export default {
       );
     }
 
-    // Read body and enforce size limit
+    // Read body and enforce size limit (use byte length for accurate UTF-8 measurement)
     const body = await request.text();
-    if (body.length > MAX_INPUT_BYTES) {
+    const bodyBytes = new TextEncoder().encode(body).byteLength;
+    if (bodyBytes > MAX_INPUT_BYTES) {
       return jsonError("Payload exceeds 100KB limit", 413);
     }
 
@@ -114,7 +117,7 @@ export default {
       );
       const resp = await fetch(discordUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "User-Agent": USER_AGENT },
         body: JSON.stringify(payload),
       });
       if (wait) {
