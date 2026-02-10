@@ -3,6 +3,7 @@ import { createAnimation } from "./animation";
 import type { ChunkerConfig } from "./chunker";
 import { chunkContent, parseConfig } from "./chunker";
 import { generateCurl } from "./curl-generator";
+import { renderDiscordMarkdown } from "./markdown";
 import { convertWebhookUrl, extractWebhookParts, isValidWebhookUrl } from "./url-converter";
 
 const DEFAULT_EXAMPLE = [
@@ -145,8 +146,8 @@ function renderChunks(chunks: string[]): void {
       header.append(username, tag, timestamp, badge);
 
       const body = document.createElement("div");
-      body.className = "dc-message-body";
-      body.textContent = chunks[i];
+      body.className = "dc-message-body dc-markdown";
+      body.innerHTML = renderDiscordMarkdown(chunks[i]);
 
       content.append(header, body);
       msg.append(avatar, content);
@@ -155,8 +156,8 @@ function renderChunks(chunks: string[]): void {
       content.className = "dc-message-content";
 
       const body = document.createElement("div");
-      body.className = "dc-message-body";
-      body.textContent = chunks[i];
+      body.className = "dc-message-body dc-markdown";
+      body.innerHTML = renderDiscordMarkdown(chunks[i]);
 
       content.appendChild(body);
       msg.appendChild(content);

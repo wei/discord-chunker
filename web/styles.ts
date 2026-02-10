@@ -252,9 +252,71 @@ body {
   font-size: 1rem;
   line-height: 1.375;
   color: var(--text-normal);
-  white-space: pre-wrap;
+  white-space: normal;
   word-break: break-word;
   overflow-wrap: break-word;
+}
+
+/* === Discord Markdown Rendering (preview) === */
+.dc-markdown {
+  /* Line breaks are rendered as <br> by discord-markdown */
+  white-space: normal;
+}
+
+.dc-markdown a {
+  color: var(--text-link);
+  text-decoration: none;
+}
+.dc-markdown a:hover { text-decoration: underline; }
+
+.dc-markdown strong { font-weight: 700; }
+.dc-markdown em { font-style: italic; }
+
+/* Inline code */
+.dc-markdown :not(pre) > code {
+  font-family: var(--font-code);
+  font-size: 0.875rem;
+  background: rgba(78, 80, 88, 0.35);
+  padding: 0.1em 0.25em;
+  border-radius: 3px;
+}
+
+/* Fenced code blocks */
+.dc-markdown pre {
+  margin: 0.25rem 0;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 0.75rem;
+  overflow-x: auto;
+}
+.dc-markdown pre code {
+  font-family: var(--font-code);
+  font-size: 0.875rem;
+  line-height: 1.375;
+  color: var(--text-normal);
+  background: transparent;
+}
+
+/* highlight.js token colors (Discord uses hljs classes) */
+.dc-markdown code.hljs { color: var(--text-normal); }
+.dc-markdown .hljs-comment,
+.dc-markdown .hljs-quote { color: #6a9955; }
+.dc-markdown .hljs-keyword,
+.dc-markdown .hljs-selector-tag,
+.dc-markdown .hljs-literal { color: #569cd6; }
+.dc-markdown .hljs-string,
+.dc-markdown .hljs-doctag { color: #ce9178; }
+.dc-markdown .hljs-number { color: #b5cea8; }
+.dc-markdown .hljs-built_in,
+.dc-markdown .hljs-type { color: #4ec9b0; }
+
+/* Blockquotes */
+.dc-markdown blockquote {
+  margin: 0.25rem 0;
+  padding-left: 0.75rem;
+  border-left: 4px solid var(--border-strong);
+  color: var(--text-secondary);
 }
 
 .dc-message-chunk-badge {
