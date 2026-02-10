@@ -13,11 +13,11 @@ Replace your Discord webhook URL:
 
 Messages under 1950 characters pass through unchanged. Longer messages are split intelligently:
 
-- Preserves code blocks (``` fences)
-- Respects paragraph boundaries
-- Avoids breaking inside parentheses
-- Readability-based line limit (blank lines and code fence delimiters don't count)
-- Orphan protection prevents tiny trailing chunks (1-2 lines)
+- Splits at line boundaries (never mid-line)
+- Respects both character and line count limits
+- Fence delimiter lines excluded from line count
+- Code blocks properly closed/reopened when split across chunks
+- Hard-cuts only when a single line exceeds the character limit
 
 ## Health Endpoint
 
@@ -43,7 +43,7 @@ The response also includes the `X-Service` header set to the service User-Agent 
 | Param | Default | Range | Description |
 |-------|---------|-------|-------------|
 | `max_chars` | 1950 | 100-2000 | Max characters per chunk |
-| `max_lines` | 20 | ≥ 0 (0 = unlimited) | Readability line limit per chunk |
+| `max_lines` | 20 | ≥ 0 (0 = unlimited) | Max lines per chunk (fence lines excluded) |
 | `thread_id` | — | — | Forward to thread |
 | `wait` | omitted | true/false | Return message object of the first chunk (omitted = Discord default) |
 
