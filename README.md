@@ -1,6 +1,6 @@
-# discord-chunker
+![discord-chunker](https://socialify.git.ci/wei/discord-chunker/image?description=1&font=Bitter&language=1&logo=https%3A%2F%2Fcdn.prod.website-files.com%2F6257adef93867e50d84d30e2%2F66e3d80db9971f10a9757c99_Symbol.svg&name=1&owner=1&pattern=Circuit+Board&theme=Auto)
 
-A stateless Cloudflare Workers proxy that intelligently chunks long Discord webhook messages. Drop-in replacement — just swap the URL.
+A Discord webhook proxy that intelligently chunks long messages. Drop-in replacement — just swap the URL.
 
 ## Usage
 
