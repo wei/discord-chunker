@@ -1,3 +1,7 @@
 name = "discord-chunker"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
+
+routes = [
+  { pattern = "discord.git.ci", custom_domain = true }
+]
