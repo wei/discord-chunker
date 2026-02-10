@@ -1,8 +1,6 @@
 import { chunkContent } from "./chunker";
 import { parseConfig, validateConfig } from "./config";
 import { buildDiscordUrl, sendChunks, validateContentType } from "./discord";
-import { FAVICON_PNG } from "./favicon";
-import { CHUNKER_HTML } from "./html";
 import type { DiscordWebhookPayload } from "./types";
 import { MAX_INPUT_BYTES, USER_AGENT } from "./types";
 
@@ -52,23 +50,7 @@ export default {
       return Response.redirect(`${url.origin}/chunker`, 301);
     }
 
-    if (url.pathname === "/chunker" && request.method === "GET") {
-      return new Response(CHUNKER_HTML, {
-        headers: {
-          "Content-Type": "text/html; charset=utf-8",
-          "Cache-Control": "public, max-age=3600",
-        },
-      });
-    }
-
-    if (url.pathname === "/favicon.png" && request.method === "GET") {
-      return new Response(FAVICON_PNG, {
-        headers: {
-          "Content-Type": "image/png",
-          "Cache-Control": "public, max-age=86400",
-        },
-      });
-    }
+    // Static assets (/chunker, /favicon.png) are served by [assets] in wrangler.toml
 
     if (url.pathname === "/health" && request.method === "GET") {
       const [serviceName = "unknown", serviceVersion = "unknown"] = USER_AGENT.split("/");

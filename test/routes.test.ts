@@ -8,11 +8,6 @@ describe("Frontend routes", () => {
     expect(resp.headers.get("Location")).toContain("/chunker");
   });
 
-  it("GET /chunker returns HTML", async () => {
-    const resp = await SELF.fetch("https://discord.git.ci/chunker");
-    expect(resp.status).toBe(200);
-    expect(resp.headers.get("Content-Type")).toContain("text/html");
-    const body = await resp.text();
-    expect(body).toContain("<!DOCTYPE html>");
-  });
+  // GET /chunker and /favicon.png are served by Cloudflare static assets,
+  // not the worker — no route test needed here.
 });

@@ -9,9 +9,15 @@ routes = [
   { pattern = "discord.git.ci", custom_domain = true }
 ]
 
+[assets]
+directory = "./public"
+
 [observability]
 enabled = true
 head_sampling_rate = 1  # 100% sampling (default)
 
 [observability.logs]
 invocation_logs = true  # Enable invocation logs (default)
+
+[observability.traces]
+enabled = false

@@ -14,7 +14,6 @@
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "format": "biome format --write",
-    "pretest": "pnpm build:web",
     "test": "vitest run",
     "test:watch": "vitest"
   },

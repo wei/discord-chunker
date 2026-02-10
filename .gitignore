@@ -1,6 +1,5 @@
 node_modules/
 dist/
+public/
 .wrangler/
 .pnpm-approved-builds.json
-src/html.ts
-src/favicon.ts
