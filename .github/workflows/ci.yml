@@ -26,11 +26,17 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Build
+        run: pnpm build
+
       - name: Lint & Format
         run: pnpm run lint
 
       - name: Typecheck
         run: pnpm tsc --noEmit
+
+      - name: Typecheck (web)
+        run: pnpm tsc --project web/tsconfig.json --noEmit
 
       - name: Test
         run: pnpm test

@@ -9,9 +9,8 @@
   "scripts": {
     "build:web": "tsx web/build.ts",
     "build": "pnpm build:web",
-    "dev": "wrangler dev",
-    "build": "echo 'No build step required'",
-    "deploy": "wrangler deploy",
+    "dev": "pnpm build:web && wrangler dev",
+    "deploy": "pnpm build:web && wrangler deploy",
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "format": "biome format --write",
