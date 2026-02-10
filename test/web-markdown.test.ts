@@ -67,6 +67,15 @@ describe("renderDiscordMarkdown", () => {
     expect(html).toContain('<div class="dc-md-gap"></div>');
   });
 
+  test("renders masked markdown links as anchored text", () => {
+    const html = renderDiscordMarkdown("[discord-chunker](https://github.com/wei/discord-chunker)");
+
+    expect(html).toContain(
+      '<a href="https://github.com/wei/discord-chunker" target="_blank" rel="noopener noreferrer">discord-chunker</a>',
+    );
+    expect(html).not.toContain("[discord-chunker](");
+  });
+
   test("escapes raw HTML by default", () => {
     const html = renderDiscordMarkdown("<script>alert('xss')</script>");
     expect(html).toContain("&lt;script&gt;");

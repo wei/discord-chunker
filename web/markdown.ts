@@ -43,8 +43,32 @@ interface ParsedList {
   items: ParsedListItem[];
 }
 
+const MASKED_MARKDOWN_LINK_RE = /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g;
+
+function escapeHtmlAttribute(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
 function renderInline(input: string): string {
-  return toHTML(input, MARKDOWN_OPTIONS);
+  const maskedLinks: string[] = [];
+  const tokenized = input.replaceAll(MASKED_MARKDOWN_LINK_RE, (_match, rawLabel, rawUrl) => {
+    const label = toHTML(rawLabel, MARKDOWN_OPTIONS);
+    const url = escapeHtmlAttribute(rawUrl);
+    const token = `§§DCMASKEDLINK${maskedLinks.length}§§`;
+    maskedLinks.push(`<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`);
+    return token;
+  });
+
+  let rendered = toHTML(tokenized, MARKDOWN_OPTIONS);
+  for (let i = 0; i < maskedLinks.length; i++) {
+    rendered = rendered.replaceAll(`§§DCMASKEDLINK${i}§§`, maskedLinks[i]);
+  }
+
+  return rendered;
 }
 
 function splitIntoSegments(input: string): MarkdownSegment[] {
