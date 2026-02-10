@@ -50,7 +50,7 @@ export function chunkContent(content: string, config: ChunkerConfig): string[] {
       current.push(closeLine);
       currentChars += 1 + closeLine.length; // \n + close
     }
-    chunks.push(current.join("\n"));
+    chunks.push(current.join("\n").trim());
     current = [];
     currentChars = 0;
     currentContentLines = 0;

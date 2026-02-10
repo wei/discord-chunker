@@ -127,6 +127,33 @@ function renderChunks(chunks: string[]): void {
 
 let statusTimeoutId: ReturnType<typeof setTimeout> | undefined;
 
+function preprocessContent(content: string): string {
+  // Preserve markdown code blocks during processing
+  const codeBlocks: string[] = [];
+
+  // Replace fenced code blocks (``` ... ```)
+  let processed = content.replace(/```[\s\S]*?```/g, (match) => {
+    codeBlocks.push(match);
+    return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
+  });
+
+  // Replace inline code (` ... `)
+  processed = processed.replace(/`[^`]*`/g, (match) => {
+    codeBlocks.push(match);
+    return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
+  });
+
+  // Replace 3+ consecutive newlines with 2 newlines, then trim
+  processed = processed.replace(/\n{3,}/g, "\n\n").trim();
+
+  // Restore code blocks
+  processed = processed.replace(/__CODE_BLOCK_(\d+)__/g, (_match, index) => {
+    return codeBlocks[parseInt(index, 10)];
+  });
+
+  return processed;
+}
+
 function showStatus(message: string, isError: boolean): void {
   let el = document.getElementById("status-toast");
   if (!el) {
@@ -190,9 +217,9 @@ function init(): void {
       </div>
 
       <footer class="footer">
-        <a href="https://github.com/wei/discord-chunker" target="_blank" rel="noopener">GitHub</a>
+        Made with \u2764\uFE0F by <a href="https://github.com/wei" target="_blank" rel="noopener">Wei</a>
         &nbsp;&middot;&nbsp;
-        See README for advanced options (max_chars, max_lines, thread_id, wait)
+        <a href="https://github.com/wei/discord-chunker" target="_blank" rel="noopener">GitHub</a>
       </footer>
     </div>
   `;
@@ -226,12 +253,13 @@ function init(): void {
 
   // Dry Run
   document.getElementById("dry-run-btn")?.addEventListener("click", () => {
-    const content = contentInput.value;
+    let content = contentInput.value;
     if (!content.trim()) {
       showStatus("Enter some content first", true);
       return;
     }
     try {
+      content = preprocessContent(content);
       const config = getDefaultConfig();
       const chunks = chunkContent(content, config);
       renderChunks(chunks);
@@ -245,7 +273,7 @@ function init(): void {
   // Send
   const sendBtn = document.getElementById("send-btn") as HTMLButtonElement;
   sendBtn?.addEventListener("click", async () => {
-    const content = contentInput.value;
+    let content = contentInput.value;
     const webhookUrl = webhookInput.value.trim();
 
     if (!content.trim()) {
@@ -264,6 +292,7 @@ function init(): void {
     }
     const { id, token, search } = parts;
 
+    content = preprocessContent(content);
     sendBtn.disabled = true;
     try {
       const resp = await fetch(`/api/webhook/${id}/${token}${search}`, {
@@ -288,7 +317,7 @@ function init(): void {
 
   // Copy curl
   document.getElementById("copy-curl-btn")?.addEventListener("click", () => {
-    const content = contentInput.value;
+    let content = contentInput.value;
     const webhookUrl = webhookInput.value.trim();
 
     if (!content.trim()) {
@@ -296,6 +325,7 @@ function init(): void {
       return;
     }
 
+    content = preprocessContent(content);
     const proxyUrl = isValidWebhookUrl(webhookUrl)
       ? convertWebhookUrl(webhookUrl)
       : `${window.location.origin}/api/webhook/YOUR_ID/YOUR_TOKEN`;
