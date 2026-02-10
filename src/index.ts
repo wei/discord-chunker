@@ -44,11 +44,26 @@ export default {
   },
 
   async handleRequest(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+
+    if (url.pathname === "/health" && request.method === "GET") {
+      const [serviceName = "unknown", serviceVersion = "unknown"] = USER_AGENT.split("/");
+      return new Response(
+        JSON.stringify({
+          status: "ok",
+          service: serviceName,
+          version: serviceVersion,
+          service_user_agent: USER_AGENT,
+          request_user_agent: request.headers.get("User-Agent") || "unknown",
+          timestamp: new Date().toISOString(),
+        }),
+        { headers: { "Content-Type": "application/json" } },
+      );
+    }
+
     if (request.method !== "POST") {
       return new Response("Method not allowed", { status: 405 });
     }
-
-    const url = new URL(request.url);
 
     // Route: /api/webhook/{id}/{token}
     const match = url.pathname.match(/^\/api\/webhook\/(\d+)\/([^/]+)$/);

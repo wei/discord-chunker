@@ -18,6 +18,25 @@ Messages under 1950 characters pass through unchanged. Longer messages are split
 - Avoids breaking inside parentheses
 - Handles line count limits
 
+## Health Endpoint
+
+`GET /health` returns a lightweight service status payload that includes both the service identity/version and the incoming request User-Agent.
+
+Example response:
+
+```json
+{
+  "status": "ok",
+  "service": "discord-chunker",
+  "version": "0.1.0",
+  "service_user_agent": "discord-chunker/0.1.0",
+  "request_user_agent": "curl/8.7.1",
+  "timestamp": "2026-02-10T04:45:00.000Z"
+}
+```
+
+The response also includes the `X-Service` header set to the service User-Agent string.
+
 ## Configuration
 
 | Param | Default | Range | Description |

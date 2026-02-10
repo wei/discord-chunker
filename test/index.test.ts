@@ -2,6 +2,29 @@ import { SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 
 describe("Worker", () => {
+  it("returns health status with service and user agent details", async () => {
+    const resp = await SELF.fetch("https://example.com/health", {
+      method: "GET",
+      headers: { "User-Agent": "Vitest-UA/1.0" },
+    });
+
+    expect(resp.status).toBe(200);
+    expect(resp.headers.get("Content-Type")).toContain("application/json");
+
+    const body = await resp.json<{
+      status: string;
+      service: string;
+      service_user_agent: string;
+      request_user_agent: string;
+    }>();
+
+    expect(body.status).toBe("ok");
+    expect(body.service).toBe("discord-chunker");
+    expect(body.service_user_agent).toMatch(/^discord-chunker\/\d+\.\d+\.\d+$/);
+    expect(body.request_user_agent).toBe("Vitest-UA/1.0");
+    expect(resp.headers.get("X-Service")).toBe(body.service_user_agent);
+  });
+
   it("rejects non-POST requests", async () => {
     const resp = await SELF.fetch("https://example.com/api/webhook/123/token", {
       method: "GET",
