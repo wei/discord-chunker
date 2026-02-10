@@ -1,34 +1,64 @@
+import { SELF } from "cloudflare:test";
 import { describe, it, expect } from "vitest";
 
-// For basic non-Workers tests, we'll import and test the handler directly
-// When we have the Workers pool working, we can use SELF.fetch
-
 describe("Worker", () => {
-  // These tests would normally use SELF.fetch from cloudflare:test
-  // For now, we'll mark these as placeholder tests until we can fix the Workers pool
-  
-  it.skip("rejects non-POST requests", async () => {
-    // TODO: Implement when Workers test pool is working
-    expect(true).toBe(true);
+  it("rejects non-POST requests", async () => {
+    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+      method: "GET",
+    });
+    expect(resp.status).toBe(405);
   });
 
-  it.skip("rejects invalid path", async () => {
-    // TODO: Implement when Workers test pool is working
-    expect(true).toBe(true);
+  it("rejects invalid path", async () => {
+    const resp = await SELF.fetch("https://example.com/invalid", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
+    expect(resp.status).toBe(404);
   });
 
-  it.skip("rejects unsupported Content-Type", async () => {
-    // TODO: Implement when Workers test pool is working
-    expect(true).toBe(true);
+  it("rejects unsupported Content-Type", async () => {
+    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "content=hello",
+    });
+    expect(resp.status).toBe(415);
   });
 
-  it.skip("rejects payload over 100KB", async () => {
-    // TODO: Implement when Workers test pool is working
-    expect(true).toBe(true);
+  it("rejects payload over 100KB", async () => {
+    const bigContent = JSON.stringify({ content: "A".repeat(110000) });
+    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: bigContent,
+    });
+    expect(resp.status).toBe(413);
   });
 
-  it.skip("rejects invalid config", async () => {
-    // TODO: Implement when Workers test pool is working
-    expect(true).toBe(true);
+  it("rejects invalid config", async () => {
+    const resp = await SELF.fetch(
+      "https://example.com/webhook/123/token?max_chars=50",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: "hello" }),
+      },
+    );
+    expect(resp.status).toBe(400);
+    const body = await resp.json<{ error: string }>();
+    expect(body.error).toContain("max_chars");
+  });
+
+  it("rejects invalid JSON body", async () => {
+    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "not json {{{",
+    });
+    expect(resp.status).toBe(400);
+    const body = await resp.json<{ error: string }>();
+    expect(body.error).toContain("Invalid JSON");
   });
 });

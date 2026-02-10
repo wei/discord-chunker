@@ -1,21 +1,51 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { SELF } from "cloudflare:test";
+import { describe, it, expect } from "vitest";
 
 describe("Integration", () => {
-  // These would normally test the full Worker with real requests
-  // Since we have Workers pool issues, marking as skipped
-  
-  it.skip("passes through short content and returns Discord response", async () => {
-    // TODO: Implement when Workers test pool is working
-    expect(true).toBe(true);
+  it("passes through embeds without chunking", async () => {
+    // Will fail at Discord (fake webhook) but should get past our validation
+    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: "A".repeat(3000),
+        embeds: [{ title: "test" }],
+      }),
+    });
+    // Should attempt to passthrough to Discord (not chunk), so we get a network/Discord error
+    // Any status other than 400/413/415/422 means our routing worked
+    expect([400, 413, 415, 422]).not.toContain(resp.status);
   });
 
-  it.skip("handles chunking for long content", async () => {
-    // TODO: Implement when Workers test pool is working
-    expect(true).toBe(true);
+  it("passes through empty content without chunking", async () => {
+    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: "" }),
+    });
+    expect([400, 413, 415, 422]).not.toContain(resp.status);
   });
 
-  it.skip("returns 422 for unchunkable content", async () => {
-    // TODO: Implement when Workers test pool is working
-    expect(true).toBe(true);
+  it("passes through null content without chunking", async () => {
+    const resp = await SELF.fetch("https://example.com/webhook/123/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: null }),
+    });
+    expect([400, 413, 415, 422]).not.toContain(resp.status);
+  });
+
+  it("attempts to chunk long content", async () => {
+    const longContent = "word ".repeat(500); // ~2500 chars
+    const resp = await SELF.fetch(
+      "https://example.com/webhook/123/token?max_chars=500",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: longContent }),
+      },
+    );
+    // Should attempt Discord send (not a validation error)
+    expect([400, 413, 415, 422]).not.toContain(resp.status);
   });
 });
