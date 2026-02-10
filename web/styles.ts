@@ -263,6 +263,51 @@ body {
   white-space: normal;
 }
 
+.dc-markdown > * + * {
+  margin-top: 0.35rem;
+}
+
+.dc-markdown .dc-md-paragraph {
+  line-height: 1.375;
+}
+
+.dc-markdown .dc-md-header {
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+.dc-markdown .dc-md-header-1 {
+  font-size: 1.5rem;
+  letter-spacing: -0.015em;
+}
+.dc-markdown .dc-md-header-2 {
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+}
+.dc-markdown .dc-md-header-3 {
+  font-size: 1.0625rem;
+  letter-spacing: -0.005em;
+}
+.dc-markdown .dc-md-header-sub {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+}
+
+.dc-markdown .dc-md-list {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+.dc-markdown .dc-md-list-ul { list-style-type: disc; }
+.dc-markdown .dc-md-list-ol { list-style-type: decimal; }
+.dc-markdown .dc-md-list li + li { margin-top: 0.15rem; }
+.dc-markdown .dc-md-list-nested {
+  margin-top: 0.2rem;
+  padding-left: 1.25rem;
+}
+
 .dc-markdown a {
   color: var(--text-link);
   text-decoration: none;

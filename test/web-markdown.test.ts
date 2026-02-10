@@ -3,14 +3,23 @@ import { describe, expect, test } from "vitest";
 import { renderDiscordMarkdown } from "../web/markdown";
 
 describe("renderDiscordMarkdown", () => {
-  test("renders Discord-style markdown (bold, italic, code blocks) and preserves line breaks", () => {
+  test("renders Discord-style headers and lists while keeping inline markdown + code fences", () => {
     const input = [
       "# Title",
+      "## Section",
+      "### Subsection",
+      "-# Supporting heading",
       "",
       "This is **bold** and *italic*.",
+      "Second paragraph line.",
       "",
       "- one",
       "- two",
+      "- parent",
+      "  - child",
+      "",
+      "1. first",
+      "2. second",
       "",
       "```ts",
       "const x = 1;",
@@ -19,18 +28,35 @@ describe("renderDiscordMarkdown", () => {
 
     const html = renderDiscordMarkdown(input);
 
-    // Discord's chat markdown does not treat # / - as semantic headings/lists.
-    // They should remain as plain text, but with <br> inserted.
-    expect(html).toContain("# Title");
-    expect(html).toMatch(/- one<br>\s*- two/);
+    // Headers: markers are consumed and converted into styled blocks.
+    expect(html).toContain('<div class="dc-md-header dc-md-header-1">Title</div>');
+    expect(html).toContain('<div class="dc-md-header dc-md-header-2">Section</div>');
+    expect(html).toContain('<div class="dc-md-header dc-md-header-3">Subsection</div>');
+    expect(html).toContain('<div class="dc-md-header dc-md-header-sub">Supporting heading</div>');
+    expect(html).not.toContain("# Title");
+    expect(html).not.toContain("## Section");
 
-    // Emphasis
+    // Paragraph + inline emphasis are still handled by discord-markdown.
     expect(html).toContain("<strong>bold</strong>");
-    expect(html).toMatch(/<em>italic<\/em>/);
+    expect(html).toContain("<em>italic</em>");
+    expect(html).toContain(
+      "This is <strong>bold</strong> and <em>italic</em>.<br>Second paragraph line.",
+    );
 
-    // Code blocks
+    // Unordered + ordered lists.
+    expect(html).toContain('<ul class="dc-md-list dc-md-list-ul">');
+    expect(html).toContain("<li>one</li>");
+    expect(html).toContain("<li>two</li>");
     expect(html).toMatch(
-      /<pre[\s\S]*<code[^>]*>[\s\S]*const[\s\S]*x[\s\S]*=[\s\S]*1[\s\S]*;[\s\S]*<\/code>[\s\S]*<\/pre>/i,
+      /<li>parent<ul class="dc-md-list dc-md-list-ul dc-md-list-nested"><li>child<\/li><\/ul><\/li>/,
+    );
+    expect(html).toContain('<ol class="dc-md-list dc-md-list-ol">');
+    expect(html).toContain("<li>first</li>");
+    expect(html).toContain("<li>second</li>");
+
+    // Fenced code blocks still use discord-markdown's hljs output.
+    expect(html).toMatch(
+      /<pre[\s\S]*<code[^>]*class="hljs ts"[^>]*>[\s\S]*const[\s\S]*x[\s\S]*=[\s\S]*1[\s\S]*;[\s\S]*<\/code>[\s\S]*<\/pre>/i,
     );
   });
 
