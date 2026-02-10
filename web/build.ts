@@ -2,7 +2,6 @@
 
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import * as esbuild from "esbuild";
-import { STYLES } from "./styles";
 
 async function build() {
   const result = await esbuild.build({
@@ -15,11 +14,12 @@ async function build() {
   });
 
   const js = result.outputFiles[0].text.replace(/<\/script/gi, "<\\/script");
+  const css = readFileSync("web/styles.css", "utf-8");
   const html = readFileSync("web/index.html", "utf-8");
   const output = html
     // Use function replacers so `$` sequences in minified JS/CSS are not treated
     // as special replacement tokens by String.prototype.replace.
-    .replace("/* __INJECTED_CSS__ */", () => STYLES)
+    .replace("/* __INJECTED_CSS__ */", () => css)
     .replace("/* __INJECTED_JS__ */", () => js);
 
   // Build-time sanity checks

@@ -1,6 +1,5 @@
 // web/app.ts
 import { createAnimation } from "./animation";
-import type { ChunkerConfig } from "./chunker";
 import { chunkContent, parseConfig } from "./chunker";
 import { generateCurl } from "./curl-generator";
 import { renderDiscordMarkdown } from "./markdown";
@@ -231,7 +230,7 @@ function init(): void {
           placeholder="https://discord.com/api/webhooks/..." />
         <div id="converted-url-group" class="converted-output" style="display:none">
           <code id="converted-url"></code>
-          <button class="dc-btn dc-btn-secondary" id="copy-url-btn" type="button">Copy</button>
+          <button class="dc-btn dc-btn-secondary" id="copy-url-btn" type="button" aria-label="Copy proxy URL to clipboard">Copy</button>
         </div>
       </div>
 
@@ -239,9 +238,9 @@ function init(): void {
         <div class="section-title">Try It Out</div>
         <textarea class="dc-textarea" id="content-input" rows="12"></textarea>
         <div class="actions">
-          <button class="dc-btn dc-btn-brand" id="dry-run-btn" type="button">Dry Run</button>
-          <button class="dc-btn dc-btn-green" id="send-btn" type="button">Send</button>
-          <button class="dc-btn dc-btn-outline" id="copy-curl-btn" type="button">Copy curl</button>
+          <button class="dc-btn dc-btn-brand" id="dry-run-btn" type="button" aria-label="Preview chunked messages without sending">Dry Run</button>
+          <button class="dc-btn dc-btn-green" id="send-btn" type="button" aria-label="Send message to Discord webhook">Send</button>
+          <button class="dc-btn dc-btn-outline" id="copy-curl-btn" type="button" aria-label="Copy curl command to clipboard">Copy curl</button>
         </div>
         <div id="chunk-results"></div>
       </div>
@@ -355,7 +354,7 @@ function init(): void {
 
     const proxyUrl = isValidWebhookUrl(webhookUrl)
       ? convertWebhookUrl(webhookUrl)
-      : "https://discord.git.ci/api/webhook/YOUR_ID/YOUR_TOKEN";
+      : `${window.location.origin}/api/webhook/YOUR_ID/YOUR_TOKEN`;
 
     const curl = generateCurl(proxyUrl || "", content);
     copyToClipboard(curl, "curl command");
