@@ -10,6 +10,12 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true
   },
-  "include": ["./**/*.ts", "../src/chunker.ts", "../src/config.ts", "../src/types.ts"],
+  "include": [
+    "./**/*.ts",
+    "../src/chunker.ts",
+    "../src/config.ts",
+    "../src/types.ts",
+    "../test/web-*.ts"
+  ],
   "exclude": ["build.ts"]
 }

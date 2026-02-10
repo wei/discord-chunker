@@ -32,10 +32,7 @@ jobs:
         run: pnpm run lint
 
       - name: Typecheck
-        run: pnpm tsc --noEmit
-
-      - name: Typecheck (web)
-        run: pnpm tsc --project web/tsconfig.json --noEmit
+        run: pnpm typecheck
 
       - name: Test
         run: pnpm test

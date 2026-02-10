@@ -1,6 +1,12 @@
 // web/app.ts
 import { createAnimation } from "./animation";
-import { chunkContent, countLines, DEFAULT_MAX_LINES, parseConfig } from "./chunker";
+import {
+  type ChunkerConfig,
+  chunkContent,
+  countLines,
+  DEFAULT_MAX_LINES,
+  parseConfig,
+} from "./chunker";
 import { generateCurl } from "./curl-generator";
 import { renderDiscordMarkdown } from "./markdown";
 import { convertWebhookUrl, extractWebhookParts, isValidWebhookUrl } from "./url-converter";

@@ -13,5 +13,5 @@
     "isolatedModules": true
   },
   "include": ["src/**/*.ts", "test/**/*.ts"],
-  "exclude": ["web/**"]
+  "exclude": ["web/**", "test/web-*.ts"]
 }
