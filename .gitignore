@@ -3,3 +3,4 @@ dist/
 public/
 .wrangler/
 .pnpm-approved-builds.json
+.worktrees/
