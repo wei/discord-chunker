@@ -1,320 +1,207 @@
 import type { ChunkerConfig } from "./types";
 import { DISCORD_CHAR_LIMIT } from "./types";
 
-// ---- Fence parsing (from OpenClaw src/markdown/fences.ts) ----
+const FENCE_RE = /^( {0,3})(`{3,}|~{3,})(.*)$/;
 
-interface FenceSpan {
-  start: number;
-  end: number;
-  openLine: string;
-  marker: string;
-  indent: string;
+interface FenceState {
+  openLine: string; // The full opening fence line (e.g. "```typescript")
+  markerChar: string; // "`" or "~"
+  markerLen: number; // 3+
 }
 
-function parseFenceSpans(buffer: string): FenceSpan[] {
-  const spans: FenceSpan[] = [];
-  let open:
-    | {
-        start: number;
-        markerChar: string;
-        markerLen: number;
-        openLine: string;
-        marker: string;
-        indent: string;
-      }
-    | undefined;
-
-  let offset = 0;
-  while (offset <= buffer.length) {
-    const nextNewline = buffer.indexOf("\n", offset);
-    const lineEnd = nextNewline === -1 ? buffer.length : nextNewline;
-    const line = buffer.slice(offset, lineEnd);
-
-    const match = line.match(/^( {0,3})(`{3,}|~{3,})(.*)$/);
-    if (match) {
-      const indent = match[1];
-      const marker = match[2];
-      const markerChar = marker[0];
-      const markerLen = marker.length;
-      if (!open) {
-        open = { start: offset, markerChar, markerLen, openLine: line, marker, indent };
-      } else if (open.markerChar === markerChar && markerLen >= open.markerLen) {
-        spans.push({
-          start: open.start,
-          end: lineEnd,
-          openLine: open.openLine,
-          marker: open.marker,
-          indent: open.indent,
-        });
-        open = undefined;
-      }
-    }
-
-    if (nextNewline === -1) break;
-    offset = nextNewline + 1;
-  }
-
-  // Unclosed fence — extends to end of buffer
-  if (open) {
-    spans.push({
-      start: open.start,
-      end: buffer.length,
-      openLine: open.openLine,
-      marker: open.marker,
-      indent: open.indent,
-    });
-  }
-
-  return spans;
+function isFenceLine(line: string): boolean {
+  return FENCE_RE.test(line);
 }
 
-function findFenceSpanAt(spans: FenceSpan[], index: number): FenceSpan | undefined {
-  return spans.find((span) => index > span.start && index < span.end);
+/**
+ * Count content lines in text — excludes code fence delimiter lines.
+ */
+export function countLines(text: string): number {
+  if (!text) return 0;
+  return text.split("\n").filter((line) => !isFenceLine(line)).length;
 }
-
-function isSafeFenceBreak(spans: FenceSpan[], index: number): boolean {
-  return !findFenceSpanAt(spans, index);
-}
-
-// ---- Break point scanning (from OpenClaw src/auto-reply/chunk.ts) ----
-
-function scanParenAwareBreakpoints(window: string): {
-  lastNewline: number;
-  lastWhitespace: number;
-} {
-  let lastNewline = -1;
-  let lastWhitespace = -1;
-  let parenDepth = 0;
-
-  for (let i = 0; i < window.length; i++) {
-    const ch = window[i];
-    if (ch === "(") {
-      parenDepth++;
-    } else if (ch === ")") {
-      if (parenDepth > 0) parenDepth--;
-    } else if (parenDepth === 0) {
-      if (ch === "\n") {
-        lastNewline = i;
-        lastWhitespace = i;
-      } else if (ch === " " || ch === "\t") {
-        lastWhitespace = i;
-      }
-    }
-  }
-
-  return { lastNewline, lastWhitespace };
-}
-
-// ---- Markdown-aware chunker ----
-
-function pickSafeBreakIndex(window: string, spans: FenceSpan[]): number {
-  const { lastNewline, lastWhitespace } = scanParenAwareBreakpoints(window);
-
-  // Prefer newline if it's a safe fence break
-  if (lastNewline > 0 && isSafeFenceBreak(spans, lastNewline)) {
-    return lastNewline;
-  }
-  // Fall back to whitespace if safe
-  if (lastWhitespace > 0 && isSafeFenceBreak(spans, lastWhitespace)) {
-    return lastWhitespace;
-  }
-  // Try newline even if inside fence (fence splitting will handle it)
-  if (lastNewline > 0) return lastNewline;
-  if (lastWhitespace > 0) return lastWhitespace;
-  return -1;
-}
-
-function stripLeadingNewlines(value: string): string {
-  let i = 0;
-  while (i < value.length && value[i] === "\n") i++;
-  return i > 0 ? value.slice(i) : value;
-}
-
-function chunkMarkdownText(text: string, limit: number): string[] {
-  if (!text) return [];
-  if (limit <= 0) return [text];
-  if (text.length <= limit) return [text];
-
-  const chunks: string[] = [];
-  let remaining = text;
-
-  while (remaining.length > limit) {
-    const spans = parseFenceSpans(remaining);
-    const window = remaining.slice(0, limit);
-
-    const softBreak = pickSafeBreakIndex(window, spans);
-    let breakIdx = softBreak > 0 ? softBreak : limit;
-
-    const initialFence = isSafeFenceBreak(spans, breakIdx)
-      ? undefined
-      : findFenceSpanAt(spans, breakIdx);
-
-    let fenceToSplit = initialFence;
-    if (initialFence) {
-      const closeLine = `${initialFence.indent}${initialFence.marker}`;
-      const maxIdxIfNeedNewline = limit - (closeLine.length + 1);
-
-      if (maxIdxIfNeedNewline <= 0) {
-        fenceToSplit = undefined;
-        breakIdx = limit;
-      } else {
-        const minProgressIdx = Math.min(
-          remaining.length,
-          initialFence.start + initialFence.openLine.length + 2,
-        );
-        const maxIdxIfAlreadyNewline = limit - closeLine.length;
-
-        let pickedNewline = false;
-        let lastNl = remaining.lastIndexOf("\n", Math.max(0, maxIdxIfAlreadyNewline - 1));
-        while (lastNl !== -1) {
-          const candidateBreak = lastNl + 1;
-          if (candidateBreak < minProgressIdx) break;
-          const candidateFence = findFenceSpanAt(spans, candidateBreak);
-          if (candidateFence && candidateFence.start === initialFence.start) {
-            breakIdx = Math.max(1, candidateBreak);
-            pickedNewline = true;
-            break;
-          }
-          lastNl = remaining.lastIndexOf("\n", lastNl - 1);
-        }
-
-        if (!pickedNewline) {
-          if (minProgressIdx > maxIdxIfAlreadyNewline) {
-            fenceToSplit = undefined;
-            breakIdx = limit;
-          } else {
-            breakIdx = Math.max(minProgressIdx, maxIdxIfNeedNewline);
-          }
-        }
-      }
-
-      const fenceAtBreak = findFenceSpanAt(spans, breakIdx);
-      fenceToSplit =
-        fenceAtBreak && fenceAtBreak.start === initialFence.start ? fenceAtBreak : undefined;
-    }
-
-    let rawChunk = remaining.slice(0, breakIdx);
-    if (!rawChunk) break;
-
-    const brokeOnSeparator = breakIdx < remaining.length && /\s/.test(remaining[breakIdx]);
-    const nextStart = Math.min(remaining.length, breakIdx + (brokeOnSeparator ? 1 : 0));
-    let next = remaining.slice(nextStart);
-
-    if (fenceToSplit) {
-      const closeLine = `${fenceToSplit.indent}${fenceToSplit.marker}`;
-      rawChunk = rawChunk.endsWith("\n") ? `${rawChunk}${closeLine}` : `${rawChunk}\n${closeLine}`;
-      next = `${fenceToSplit.openLine}\n${next}`;
-    } else {
-      // Trim trailing whitespace when not splitting fence
-      rawChunk = rawChunk.trimEnd();
-      next = stripLeadingNewlines(next);
-    }
-
-    chunks.push(rawChunk);
-    remaining = next;
-  }
-
-  if (remaining.length) chunks.push(remaining);
-  return chunks;
-}
-
-// ---- Line limit re-splitting ----
-
-const FENCE_REGEX = /^( {0,3})(`{3,}|~{3,})(.*)$/;
-
-function applyLineLimit(chunks: string[], maxLines: number, _maxChars: number): string[] {
-  if (maxLines <= 0) return chunks;
-
-  const result: string[] = [];
-  for (const chunk of chunks) {
-    const lines = chunk.split("\n");
-    if (lines.length <= maxLines) {
-      result.push(chunk);
-      continue;
-    }
-
-    // Re-split at line boundaries — fence-aware single pass
-    let current: string[] = [];
-    let insideFence = false;
-    let fenceOpenLine = "";
-    let fenceMarkerChar = "";
-    let fenceMarkerLen = 0;
-
-    for (const line of lines) {
-      // Check if we need to split BEFORE adding this line
-      if (current.length >= maxLines && current.length > 0) {
-        if (insideFence) {
-          // Close the fence in the current chunk before splitting
-          const closeMarker = fenceMarkerChar.repeat(fenceMarkerLen);
-          current.push(closeMarker);
-          result.push(current.join("\n"));
-          // Reopen the fence in the next chunk
-          current = [fenceOpenLine];
-        } else {
-          result.push(current.join("\n"));
-          current = [];
-        }
-      }
-
-      current.push(line);
-
-      // Track fence state AFTER adding the line
-      const fenceMatch = line.match(FENCE_REGEX);
-      if (fenceMatch) {
-        const marker = fenceMatch[2];
-        const mChar = marker[0];
-        const mLen = marker.length;
-
-        if (!insideFence) {
-          insideFence = true;
-          fenceOpenLine = line;
-          fenceMarkerChar = mChar;
-          fenceMarkerLen = mLen;
-        } else if (mChar === fenceMarkerChar && mLen >= fenceMarkerLen) {
-          insideFence = false;
-        }
-      }
-    }
-
-    if (current.length > 0) {
-      result.push(current.join("\n"));
-    }
-  }
-  return result;
-}
-
-// ---- Public API ----
 
 /**
  * Chunk content for Discord delivery.
- * Returns array of content strings, each safe to send as a Discord message.
- * Throws if any resulting chunk exceeds DISCORD_CHAR_LIMIT characters.
+ *
+ * Single-pass line-oriented splitter:
+ * - Walks lines forward, never splitting mid-line
+ * - Fence delimiter lines are excluded from the line count
+ * - When a split lands inside a code block, the fence is closed/reopened
+ * - Hard-cuts only for single lines exceeding maxChars
  */
 export function chunkContent(content: string, config: ChunkerConfig): string[] {
   if (!content) return [content];
 
-  const lineCount = content.split("\n").length;
-  const needsCharSplit = content.length > config.maxChars;
-  const needsLineSplit = config.maxLines > 0 && lineCount > config.maxLines;
+  const { maxChars, maxLines } = config;
+  const lines = content.split("\n");
 
-  if (!needsCharSplit && !needsLineSplit) {
-    return [content];
+  const chunks: string[] = [];
+  let current: string[] = [];
+  let currentChars = 0;
+  let currentContentLines = 0; // excludes fence lines
+  let fence: FenceState | null = null;
+
+  const flush = () => {
+    if (current.length === 0) return;
+    // Close open fence before flushing
+    if (fence) {
+      const closeLine = fence.markerChar.repeat(fence.markerLen);
+      current.push(closeLine);
+      currentChars += 1 + closeLine.length; // \n + close
+    }
+    chunks.push(current.join("\n"));
+    current = [];
+    currentChars = 0;
+    currentContentLines = 0;
+    // Reopen fence in next chunk
+    if (fence) {
+      current = [fence.openLine];
+      currentChars = fence.openLine.length;
+      // Opening fence line doesn't count toward content lines
+    }
+  };
+
+  for (const line of lines) {
+    // Detect fence transitions
+    const fenceMatch = line.match(FENCE_RE);
+    let lineIsFence = false;
+    if (fenceMatch) {
+      const marker = fenceMatch[2];
+      const mChar = marker[0];
+      const mLen = marker.length;
+      if (!fence) {
+        // Opening fence
+        lineIsFence = true;
+        // We'll set fence state AFTER adding the line
+      } else if (mChar === fence.markerChar && mLen >= fence.markerLen) {
+        // Closing fence
+        lineIsFence = true;
+      }
+    }
+
+    // Oversized opening fence: strip info string to just bare markers.
+    // This preserves fence state tracking while fitting within maxChars.
+    if (fenceMatch && !fence && line.length > maxChars) {
+      const marker = fenceMatch[2];
+      const sanitized = fenceMatch[1] + marker; // indent + markers only
+      // Treat the sanitized line as the actual line for the rest of the loop
+      // by updating fence state and adding it normally.
+      const joinCost = current.length > 0 ? 1 : 0;
+      const nextChars = currentChars + joinCost + sanitized.length;
+      if (nextChars > maxChars && current.length > 0) {
+        flush();
+      }
+      current.push(sanitized);
+      currentChars = current.length === 1 ? sanitized.length : currentChars + 1 + sanitized.length;
+      // Opening fence doesn't count toward content lines
+      fence = { openLine: sanitized, markerChar: marker[0], markerLen: marker.length };
+      continue;
+    }
+
+    // Hard-cut: single line exceeds maxChars.
+    // Note: hard-cuts split at raw character boundaries without preserving
+    // semantic structure (e.g. markdown links or words). This is acceptable
+    // because lines this long are atypical in practice, and Discord's API
+    // will reject messages with excessively long lines regardless.
+    if (line.length > maxChars) {
+      flush();
+
+      // If we are inside an active fence, preserve fence reopening at the
+      // start of every hard-cut chunk and close on every flush.
+      if (fence) {
+        let remaining = line;
+        while (remaining.length > 0) {
+          const joinCost = current.length > 0 ? 1 : 0;
+          const closeLine = fence.markerChar.repeat(fence.markerLen);
+          const fenceCloseOverhead = 1 + closeLine.length; // \n + close
+          const room = maxChars - currentChars - joinCost - fenceCloseOverhead;
+
+          if (room <= 0) {
+            throw new Error(
+              `Unable to chunk: maxChars (${maxChars}) is too small to preserve active code fence wrappers.`,
+            );
+          }
+
+          const take = Math.min(room, remaining.length);
+          const piece = remaining.slice(0, take);
+          current.push(piece);
+          currentChars =
+            current.length === 1 ? piece.length : currentChars + joinCost + piece.length;
+          currentContentLines += lineIsFence ? 0 : 1;
+          remaining = remaining.slice(take);
+
+          if (remaining.length > 0) {
+            flush();
+          }
+        }
+      } else {
+        let remaining = line;
+        while (remaining.length > maxChars) {
+          chunks.push(remaining.slice(0, maxChars));
+          remaining = remaining.slice(maxChars);
+        }
+        if (remaining.length > 0) {
+          current = [remaining];
+          currentChars = remaining.length;
+          currentContentLines = lineIsFence ? 0 : 1;
+        }
+      }
+
+      // Update fence state for this line
+      if (fenceMatch) {
+        const marker = fenceMatch[2];
+        if (!fence) {
+          fence = { openLine: line, markerChar: marker[0], markerLen: marker.length };
+        } else if (marker[0] === fence.markerChar && marker.length >= fence.markerLen) {
+          fence = null;
+        }
+      }
+      continue;
+    }
+
+    // Cost of adding this line
+    const joinCost = current.length > 0 ? 1 : 0;
+    const nextChars = currentChars + joinCost + line.length;
+    const nextContentLines = currentContentLines + (lineIsFence ? 0 : 1);
+
+    // Check if adding this line would exceed either limit
+    // When inside a fence, account for the close-fence overhead on flush
+    const fenceCloseOverhead =
+      fence && !lineIsFence ? 1 + fence.markerChar.repeat(fence.markerLen).length : 0;
+    const exceedsChars = nextChars + fenceCloseOverhead > maxChars;
+    const exceedsLines = maxLines > 0 && nextContentLines > maxLines;
+
+    if ((exceedsChars || exceedsLines) && current.length > 0) {
+      flush();
+      // Recalculate after flush (fence reopen may have added to current)
+    }
+
+    current.push(line);
+    currentChars = current.length === 1 ? line.length : currentChars + 1 + line.length;
+    currentContentLines += lineIsFence ? 0 : 1;
+
+    // Update fence state AFTER adding the line
+    if (fenceMatch) {
+      const marker = fenceMatch[2];
+      if (!fence) {
+        fence = { openLine: line, markerChar: marker[0], markerLen: marker.length };
+      } else if (marker[0] === fence.markerChar && marker.length >= fence.markerLen) {
+        fence = null;
+      }
+    }
   }
 
-  // Step 1: Character-based markdown-aware splitting
-  let chunks = chunkMarkdownText(content, config.maxChars);
-
-  // Step 2: Apply line limit (single re-split pass)
-  if (config.maxLines > 0) {
-    chunks = applyLineLimit(chunks, config.maxLines, config.maxChars);
+  // Flush remaining (no fence close needed — content ends naturally)
+  if (current.length > 0) {
+    chunks.push(current.join("\n"));
   }
 
-  // Step 3: Sanity check — no chunk may exceed Discord's hard limit
+  // Sanity check
   for (const chunk of chunks) {
     if (chunk.length > DISCORD_CHAR_LIMIT) {
       throw new Error(
-        `Unable to chunk: resulting chunk exceeds ${DISCORD_CHAR_LIMIT} character limit (got ${chunk.length}). ` +
-          `This can happen when a single token or line exceeds max_chars with no valid break point.`,
+        `Unable to chunk: resulting chunk exceeds ${DISCORD_CHAR_LIMIT} character limit (got ${chunk.length}).`,
       );
     }
   }

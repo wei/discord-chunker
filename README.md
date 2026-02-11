@@ -13,10 +13,13 @@ Replace your Discord webhook URL:
 
 Messages under 1950 characters pass through unchanged. Longer messages are split intelligently:
 
-- Preserves code blocks (``` fences)
-- Respects paragraph boundaries
-- Avoids breaking inside parentheses
-- Handles line count limits
+- Splits at line boundaries (never mid-line)
+- Respects both character and line count limits
+- Fence delimiter lines excluded from line count
+- Code blocks properly closed/reopened when split across chunks
+- Hard-cuts only when a single line exceeds the character limit
+
+Note: when a split occurs inside an active code fence, temporary close/reopen fence wrapper lines may cause a chunk to exceed the configured `max_chars`. This is intentional for fence integrity. The hard Discord limit of 2000 characters is still enforced.
 
 ## Health Endpoint
 
@@ -42,12 +45,12 @@ The response also includes the `X-Service` header set to the service User-Agent 
 | Param | Default | Range | Description |
 |-------|---------|-------|-------------|
 | `max_chars` | 1950 | 100-2000 | Max characters per chunk |
-| `max_lines` | 17 | ≥ 0 (0 = unlimited) | Max lines per chunk |
+| `max_lines` | 20 | ≥ 0 (0 = unlimited) | Max lines per chunk (fence lines excluded) |
 | `thread_id` | — | — | Forward to thread |
 | `wait` | omitted | true/false | Return message object of the first chunk (omitted = Discord default) |
 
 ```bash
-POST /api/webhook/123/token?max_chars=1500&max_lines=20&thread_id=999
+POST /api/webhook/123/token?max_chars=1500&max_lines=25&thread_id=999
 ```
 
 ## Prerequisites

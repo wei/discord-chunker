@@ -1,125 +1,185 @@
 import { describe, expect, it } from "vitest";
-import { chunkContent } from "../src/chunker";
+import { chunkContent, countLines } from "../src/chunker";
+
+describe("countLines", () => {
+  it("returns 0 for empty string", () => {
+    expect(countLines("")).toBe(0);
+  });
+
+  it("counts non-fence lines", () => {
+    expect(countLines("hello")).toBe(1);
+    expect(countLines("a\nb\nc")).toBe(3);
+  });
+
+  it("excludes fence delimiter lines", () => {
+    expect(countLines("```js\ncode\n```")).toBe(1);
+    expect(countLines("~~~\ncode\n~~~")).toBe(1);
+  });
+
+  it("counts blank lines", () => {
+    expect(countLines("a\n\nb")).toBe(3);
+  });
+
+  it("handles nested/multiple fence blocks", () => {
+    expect(countLines("before\n```\ncode\n```\nafter")).toBe(3);
+  });
+});
 
 describe("chunkContent", () => {
-  // --- Passthrough cases ---
+  // --- Passthrough ---
   it("returns single chunk for short content", () => {
-    const result = chunkContent("hello", { maxChars: 1950, maxLines: 17 });
-    expect(result).toEqual(["hello"]);
+    expect(chunkContent("hello", { maxChars: 1950, maxLines: 20 })).toEqual(["hello"]);
   });
 
   it("returns single chunk for empty string", () => {
-    expect(chunkContent("", { maxChars: 1950, maxLines: 17 })).toEqual([""]);
+    expect(chunkContent("", { maxChars: 1950, maxLines: 20 })).toEqual([""]);
   });
 
   // --- Character splitting ---
-  it("splits long plain text at word boundary", () => {
-    const words = Array(50).fill("hello").join(" "); // 299 chars
-    const chunks = chunkContent(words, { maxChars: 100, maxLines: 0 });
-    expect(chunks.length).toBeGreaterThan(1);
+  it("splits when adding a line would exceed maxChars", () => {
+    const text = `${"A".repeat(80)}\n${"B".repeat(80)}`;
+    const chunks = chunkContent(text, { maxChars: 100, maxLines: 0 });
+    expect(chunks).toEqual(["A".repeat(80), "B".repeat(80)]);
+  });
+
+  it("preserves leading indentation when flushing", () => {
+    const text = `hello\n    two\nend`;
+    const chunks = chunkContent(text, { maxChars: 10, maxLines: 0 });
+    expect(chunks).toEqual(["hello", "    two", "end"]);
+  });
+
+  it("does not prematurely flush when current line closes active fence", () => {
+    const text = `\`\`\`js\n${"A".repeat(90)}\n\`\`\``;
+    const chunks = chunkContent(text, { maxChars: 100, maxLines: 0 });
+    expect(chunks).toEqual([text]);
+  });
+
+  it("hard-cuts a single line exceeding maxChars", () => {
+    const text = "A".repeat(200);
+    const chunks = chunkContent(text, { maxChars: 100, maxLines: 0 });
+    expect(chunks).toEqual(["A".repeat(100), "A".repeat(100)]);
+  });
+
+  it("preserves reopened fence when hard-cut happens inside an active code block", () => {
+    const text = `\`\`\`js\nshort\n${"A".repeat(220)}\nend\n\`\`\``;
+    const chunks = chunkContent(text, { maxChars: 100, maxLines: 0 });
+
+    expect(chunks.length).toBeGreaterThan(2);
+    expect(chunks[1]).toMatch(/^```js\n/);
+    for (const chunk of chunks) {
+      const fenceCount = (chunk.match(/```/g) || []).length;
+      expect(fenceCount % 2).toBe(0);
+    }
+  });
+
+  it("never splits mid-line when line fits individually", () => {
+    const text = `${"A".repeat(40)}\n${"B".repeat(40)}\n${"C".repeat(40)}`;
+    const chunks = chunkContent(text, { maxChars: 100, maxLines: 0 });
+    expect(chunks).toEqual([`${"A".repeat(40)}\n${"B".repeat(40)}`, "C".repeat(40)]);
+  });
+
+  it("no chunk exceeds maxChars", () => {
+    const text = Array(50).fill("hello world").join("\n");
+    const chunks = chunkContent(text, { maxChars: 100, maxLines: 0 });
     for (const chunk of chunks) {
       expect(chunk.length).toBeLessThanOrEqual(100);
     }
   });
 
-  it("splits at paragraph boundary before word boundary", () => {
-    const text = `${"A".repeat(80)}\n\n${"B".repeat(80)}`;
-    const chunks = chunkContent(text, { maxChars: 100, maxLines: 0 });
-    expect(chunks[0]).toBe("A".repeat(80));
-    expect(chunks[1]).toBe("B".repeat(80));
+  // --- Line splitting ---
+  it("splits when line count exceeds maxLines", () => {
+    const text = Array(10).fill("line").join("\n");
+    const chunks = chunkContent(text, { maxChars: 50000, maxLines: 5 });
+    expect(chunks).toEqual([Array(5).fill("line").join("\n"), Array(5).fill("line").join("\n")]);
   });
 
-  it("hard cuts when no break points exist", () => {
-    const text = "A".repeat(200);
-    const chunks = chunkContent(text, { maxChars: 100, maxLines: 0 });
-    expect(chunks.length).toBe(2);
-    expect(chunks[0].length).toBe(100);
-    expect(chunks[1].length).toBe(100);
+  it("max_lines=0 means unlimited", () => {
+    const text = Array(100).fill("line").join("\n");
+    expect(chunkContent(text, { maxChars: 50000, maxLines: 0 })).toEqual([text]);
   });
 
-  // --- Code fence preservation ---
-  it("preserves code fences across chunks", () => {
-    const code = `\`\`\`js\n${"x = 1;\n".repeat(50)}\`\`\``;
-    const chunks = chunkContent(code, { maxChars: 200, maxLines: 0 });
+  it("splits by whichever limit is hit first", () => {
+    const text = "a\nb\nc\nd\ne";
+    const chunks = chunkContent(text, { maxChars: 50000, maxLines: 3 });
+    expect(chunks).toEqual(["a\nb\nc", "d\ne"]);
+  });
+
+  // --- Fence lines excluded from line count ---
+  it("fence delimiters do not count toward maxLines", () => {
+    // 2 fence lines + 3 content lines = 5 raw lines, 3 content lines
+    const text = "```js\na\nb\nc\n```";
+    const chunks = chunkContent(text, { maxChars: 50000, maxLines: 3 });
+    expect(chunks).toEqual([text]); // fits: only 3 content lines
+  });
+
+  it("splits when content lines inside fence exceed maxLines", () => {
+    const code = `\`\`\`\n${Array(10).fill("x").join("\n")}\n\`\`\``;
+    const chunks = chunkContent(code, { maxChars: 50000, maxLines: 5 });
+    expect(chunks.length).toBeGreaterThan(1);
+  });
+
+  // --- Fence close/reopen across chunks ---
+  it("closes and reopens fence when split lands inside code block", () => {
+    const code = `\`\`\`js\n${Array(10).fill("code").join("\n")}\n\`\`\``;
+    const chunks = chunkContent(code, { maxChars: 50000, maxLines: 5 });
+    expect(chunks.length).toBeGreaterThan(1);
     // First chunk should end with closing fence
     expect(chunks[0]).toMatch(/```$/);
-    // Second chunk should start with opening fence
-    expect(chunks[1]).toMatch(/^```js\n/);
+    // Second chunk should start with reopened fence
+    expect(chunks[1]).toMatch(/^```js/);
+    // Last chunk should end with the original closing fence
+    expect(chunks[chunks.length - 1]).toMatch(/```$/);
   });
 
-  it("does not break inside code fence mid-line", () => {
-    const text = "before\n\n```\nshort code\n```\n\nafter";
-    const chunks = chunkContent(text, { maxChars: 500, maxLines: 0 });
+  // --- Both limits ---
+  it("respects both maxChars and maxLines together", () => {
+    const text = Array(25).fill("X".repeat(50)).join("\n");
+    const chunks = chunkContent(text, { maxChars: 200, maxLines: 10 });
+    for (const chunk of chunks) {
+      expect(chunk.length).toBeLessThanOrEqual(200);
+      expect(countLines(chunk)).toBeLessThanOrEqual(10);
+    }
+  });
+
+  // --- Sanity ---
+  it("preserves info string if opening fence fits within maxChars", () => {
+    const info = "typescript";
+    const text = `\`\`\`${info}\ncode\n\`\`\``;
+    // maxChars=50 is enough for ```typescript (13 chars)
+    const chunks = chunkContent(text, { maxChars: 50, maxLines: 0 });
+
     expect(chunks).toEqual([text]);
   });
 
-  // --- Line limit ---
-  it("splits when exceeding max_lines", () => {
-    const lines = Array(20).fill("line").join("\n");
-    const chunks = chunkContent(lines, { maxChars: 2000, maxLines: 5 });
-    expect(chunks.length).toBeGreaterThan(1);
+  it("truncates oversized opening fence to just markers and drops info string", () => {
+    // Info string makes the line ~153 chars long
+    const longInfo = "A".repeat(150);
+    const text = `\`\`\`${longInfo}\ncode\n\`\`\``;
+
+    // maxChars=100. The opening line > 100.
+    // Expectation: The first chunk should be just "```" (plus newline/code if it fits, or just the fence line)
+    // In this implementation, since we replace the line with "```", it becomes short enough to be added to 'current'.
+    // Then "code" and "```" are added.
+    // So if "```\ncode\n```" fits in 100 chars (it does), it should all be one chunk,
+    // BUT the opening line must be reduced to just "```".
+
+    const chunks = chunkContent(text, { maxChars: 100, maxLines: 0 });
+
+    // Verify valid chunks (sanity check)
     for (const chunk of chunks) {
-      // Allow some tolerance — re-split is single pass
-      const lineCount = chunk.split("\n").length;
-      expect(lineCount).toBeLessThanOrEqual(10); // generous bound
+      expect(chunk.length).toBeLessThanOrEqual(100);
     }
+
+    // The result should look like:
+    // ```
+    // code
+    // ```
+    // NOT containing the long AAAAA... string.
+    const expectedContent = "```\ncode\n```";
+    expect(chunks[0]).toBe(expectedContent);
+    expect(chunks[0]).not.toContain("AAAA");
   });
 
-  it("max_lines=0 means unlimited lines", () => {
-    const lines = Array(100).fill("line").join("\n");
-    const chunks = chunkContent(lines, { maxChars: 50000, maxLines: 0 });
-    expect(chunks).toEqual([lines]);
-  });
-
-  // --- Parentheses ---
-  it("avoids breaking inside parentheses", () => {
-    const text = `call(${"x, ".repeat(30)}y)`;
-    const chunks = chunkContent(text, { maxChars: 60, maxLines: 0 });
-    // Should not break mid-parentheses if possible
-    for (const chunk of chunks) {
-      const opens = (chunk.match(/\(/g) || []).length;
-      const closes = (chunk.match(/\)/g) || []).length;
-      // Balanced or the break happened outside parens
-      expect(Math.abs(opens - closes)).toBeLessThanOrEqual(1);
-    }
-  });
-
-  // --- Line limit + code fence interaction ---
-  it("preserves code fences when line-splitting across chunks", () => {
-    // Code block with 20 lines of code — will need splitting with max_lines=8
-    const code = `\`\`\`typescript\n${Array(20).fill("const x = 1;").join("\n")}\n\`\`\``;
-    const chunks = chunkContent(code, { maxChars: 2000, maxLines: 8 });
-    expect(chunks.length).toBeGreaterThan(1);
-
-    // Every chunk should have balanced code fences
-    for (const chunk of chunks) {
-      const fenceMarkers = chunk.match(/^(`{3,}|~{3,})/gm) || [];
-      expect(fenceMarkers.length % 2).toBe(0);
-    }
-  });
-
-  it("preserves fences when line limit splits mid-fence after char split", () => {
-    // Simulate the real bug: chunkMarkdownText produces a chunk with a code fence
-    // that has more lines than max_lines, then applyLineLimit re-splits it
-    const text =
-      "# Header\n\n" +
-      "```js\n" +
-      Array(30).fill("x = 1;").join("\n") +
-      "\n```\n\n" +
-      "Footer text";
-    const chunks = chunkContent(text, { maxChars: 2000, maxLines: 10 });
-    expect(chunks.length).toBeGreaterThan(1);
-
-    for (const chunk of chunks) {
-      // If chunk contains code content, it must have balanced fences
-      if (chunk.includes("x = 1;")) {
-        const fenceMarkers = chunk.match(/^(`{3,}|~{3,})/gm) || [];
-        expect(fenceMarkers.length % 2).toBe(0);
-      }
-    }
-  });
-
-  // --- Sanity check ---
   it("no chunk exceeds 2000 characters", () => {
     const text = "A".repeat(5000);
     const chunks = chunkContent(text, { maxChars: 1950, maxLines: 0 });

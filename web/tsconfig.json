@@ -3,15 +3,19 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ESNext"],
-    "types": ["@cloudflare/workers-types", "@cloudflare/vitest-pool-workers"],
+    "lib": ["ESNext", "DOM"],
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"],
-  "exclude": ["web/**", "test/web-*.ts"]
+  "include": [
+    "./**/*.ts",
+    "../src/chunker.ts",
+    "../src/config.ts",
+    "../src/types.ts",
+    "../test/web-*.ts"
+  ],
+  "exclude": ["build.ts"]
 }

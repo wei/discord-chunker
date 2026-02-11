@@ -4,7 +4,6 @@ on:
   pull_request:
     branches: [master]
   push:
-    branches: [master]
 
 permissions:
   contents: read
@@ -26,11 +25,14 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Build
+        run: pnpm build
+
       - name: Lint & Format
         run: pnpm run lint
 
       - name: Typecheck
-        run: pnpm tsc --noEmit
+        run: pnpm typecheck
 
       - name: Test
         run: pnpm test

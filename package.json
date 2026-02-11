@@ -7,12 +7,14 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "wrangler dev",
-    "build": "echo 'No build step required'",
-    "deploy": "wrangler deploy",
+    "build:web": "tsx web/build.ts",
+    "build": "pnpm build:web",
+    "dev": "concurrently -n web,worker -c blue,green \"tsx web/build.ts --watch\" \"wrangler dev\"",
+    "deploy": "pnpm build:web && wrangler deploy",
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "format": "biome format --write",
+    "typecheck": "tsc --noEmit && tsc --project web/tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -20,7 +22,11 @@
     "@biomejs/biome": "^2.3.14",
     "@cloudflare/vitest-pool-workers": "^0.12.10",
     "@cloudflare/workers-types": "^4.20260210.0",
+    "concurrently": "^9.2.1",
+    "discord-markdown": "2.5.1",
+    "esbuild": "^0.27.3",
     "lefthook": "^2.1.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "~3.2.4",
     "wrangler": "^4.63.0"

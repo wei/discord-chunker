@@ -46,6 +46,12 @@ export default {
   async handleRequest(request: Request): Promise<Response> {
     const url = new URL(request.url);
 
+    if (url.pathname === "/" && request.method === "GET") {
+      return Response.redirect(`${url.origin}/chunker`, 301);
+    }
+
+    // Static assets (/chunker, /favicon.png) are served by [assets] in wrangler.toml
+
     if (url.pathname === "/health" && request.method === "GET") {
       const [serviceName = "unknown", serviceVersion = "unknown"] = USER_AGENT.split("/");
       return new Response(
