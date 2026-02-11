@@ -8,7 +8,7 @@ describe("Shared chunker (web compatibility)", () => {
     const chunks = chunkContent(longContent, config);
     expect(chunks.length).toBeGreaterThan(1);
     for (const chunk of chunks) {
-      expect(chunk.length).toBeLessThanOrEqual(2000);
+      expect(chunk.length).toBeLessThanOrEqual(config.maxChars);
     }
   });
 

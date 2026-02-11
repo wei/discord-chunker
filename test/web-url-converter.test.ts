@@ -85,4 +85,17 @@ describe("extractWebhookParts", () => {
     const result = extractWebhookParts("https://discordapp.com/api/webhooks/123/mytoken");
     expect(result).toEqual({ id: "123", token: "mytoken", search: "" });
   });
+
+  it("strips fragment from extracted parts", () => {
+    const result = extractWebhookParts("https://discord.com/api/webhooks/123/mytoken#fragment");
+    // URL constructor strips fragments from hash but they don't affect search
+    expect(result).toEqual({ id: "123", token: "mytoken", search: "" });
+  });
+
+  it("strips fragment but preserves query in extracted parts", () => {
+    const result = extractWebhookParts(
+      "https://discord.com/api/webhooks/123/mytoken?wait=true#fragment",
+    );
+    expect(result).toEqual({ id: "123", token: "mytoken", search: "?wait=true" });
+  });
 });
