@@ -19,6 +19,8 @@ Messages under 1950 characters pass through unchanged. Longer messages are split
 - Code blocks properly closed/reopened when split across chunks
 - Hard-cuts only when a single line exceeds the character limit
 
+Note: when a split occurs inside an active code fence, temporary close/reopen fence wrapper lines may cause a chunk to exceed the configured `max_chars`. This is intentional for fence integrity. The hard Discord limit of 2000 characters is still enforced.
+
 ## Health Endpoint
 
 `GET /health` returns a lightweight service status payload that includes both the service identity/version and the incoming request User-Agent.

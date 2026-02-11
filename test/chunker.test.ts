@@ -42,6 +42,18 @@ describe("chunkContent", () => {
     expect(chunks).toEqual(["A".repeat(80), "B".repeat(80)]);
   });
 
+  it("preserves leading indentation when flushing", () => {
+    const text = `hello\n    two\nend`;
+    const chunks = chunkContent(text, { maxChars: 10, maxLines: 0 });
+    expect(chunks).toEqual(["hello", "    two", "end"]);
+  });
+
+  it("does not prematurely flush when current line closes active fence", () => {
+    const text = `\`\`\`js\n${"A".repeat(90)}\n\`\`\``;
+    const chunks = chunkContent(text, { maxChars: 100, maxLines: 0 });
+    expect(chunks).toEqual([text]);
+  });
+
   it("hard-cuts a single line exceeding maxChars", () => {
     const text = "A".repeat(200);
     const chunks = chunkContent(text, { maxChars: 100, maxLines: 0 });

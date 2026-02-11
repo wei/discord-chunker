@@ -50,7 +50,7 @@ export function chunkContent(content: string, config: ChunkerConfig): string[] {
       current.push(closeLine);
       currentChars += 1 + closeLine.length; // \n + close
     }
-    chunks.push(current.join("\n").trim());
+    chunks.push(current.join("\n"));
     current = [];
     currentChars = 0;
     currentContentLines = 0;
@@ -144,8 +144,9 @@ export function chunkContent(content: string, config: ChunkerConfig): string[] {
 
     // Check if adding this line would exceed either limit
     // When inside a fence, account for the close-fence overhead on flush
-    const fenceCloseOverhead = fence ? 1 + fence.markerChar.repeat(fence.markerLen).length : 0;
-    const exceedsChars = nextChars + (fence ? fenceCloseOverhead : 0) > maxChars;
+    const fenceCloseOverhead =
+      fence && !lineIsFence ? 1 + fence.markerChar.repeat(fence.markerLen).length : 0;
+    const exceedsChars = nextChars + fenceCloseOverhead > maxChars;
     const exceedsLines = maxLines > 0 && nextContentLines > maxLines;
 
     if ((exceedsChars || exceedsLines) && current.length > 0) {
