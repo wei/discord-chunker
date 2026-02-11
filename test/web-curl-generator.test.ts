@@ -16,6 +16,12 @@ describe("Curl Generator", () => {
     expect(result).toContain("it'\\''s a test");
   });
 
+  it("escapes single quotes in proxy URL", () => {
+    const result = generateCurl("https://example.com/webhook/it's-me", "Hello world");
+    // URL is single-quoted in shell, so embedded single quote must be escaped
+    expect(result).toContain("curl -X POST 'https://example.com/webhook/it'\\''s-me'");
+  });
+
   it("handles multiline content", () => {
     const result = generateCurl("https://discord.git.ci/api/webhook/123/token", "line1\nline2");
     // JSON.stringify escapes newlines as \n
