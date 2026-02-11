@@ -80,6 +80,25 @@ export function chunkContent(content: string, config: ChunkerConfig): string[] {
       }
     }
 
+    // Oversized opening fence: strip info string to just bare markers.
+    // This preserves fence state tracking while fitting within maxChars.
+    if (fenceMatch && !fence && line.length > maxChars) {
+      const marker = fenceMatch[2];
+      const sanitized = fenceMatch[1] + marker; // indent + markers only
+      // Treat the sanitized line as the actual line for the rest of the loop
+      // by updating fence state and adding it normally.
+      const joinCost = current.length > 0 ? 1 : 0;
+      const nextChars = currentChars + joinCost + sanitized.length;
+      if (nextChars > maxChars && current.length > 0) {
+        flush();
+      }
+      current.push(sanitized);
+      currentChars = current.length === 1 ? sanitized.length : currentChars + 1 + sanitized.length;
+      // Opening fence doesn't count toward content lines
+      fence = { openLine: sanitized, markerChar: marker[0], markerLen: marker.length };
+      continue;
+    }
+
     // Hard-cut: single line exceeds maxChars.
     // Note: hard-cuts split at raw character boundaries without preserving
     // semantic structure (e.g. markdown links or words). This is acceptable

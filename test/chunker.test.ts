@@ -142,6 +142,44 @@ describe("chunkContent", () => {
   });
 
   // --- Sanity ---
+  it("preserves info string if opening fence fits within maxChars", () => {
+    const info = "typescript";
+    const text = `\`\`\`${info}\ncode\n\`\`\``;
+    // maxChars=50 is enough for ```typescript (13 chars)
+    const chunks = chunkContent(text, { maxChars: 50, maxLines: 0 });
+
+    expect(chunks).toEqual([text]);
+  });
+
+  it("truncates oversized opening fence to just markers and drops info string", () => {
+    // Info string makes the line ~153 chars long
+    const longInfo = "A".repeat(150);
+    const text = `\`\`\`${longInfo}\ncode\n\`\`\``;
+
+    // maxChars=100. The opening line > 100.
+    // Expectation: The first chunk should be just "```" (plus newline/code if it fits, or just the fence line)
+    // In this implementation, since we replace the line with "```", it becomes short enough to be added to 'current'.
+    // Then "code" and "```" are added.
+    // So if "```\ncode\n```" fits in 100 chars (it does), it should all be one chunk,
+    // BUT the opening line must be reduced to just "```".
+
+    const chunks = chunkContent(text, { maxChars: 100, maxLines: 0 });
+
+    // Verify valid chunks (sanity check)
+    for (const chunk of chunks) {
+      expect(chunk.length).toBeLessThanOrEqual(100);
+    }
+
+    // The result should look like:
+    // ```
+    // code
+    // ```
+    // NOT containing the long AAAAA... string.
+    const expectedContent = "```\ncode\n```";
+    expect(chunks[0]).toBe(expectedContent);
+    expect(chunks[0]).not.toContain("AAAA");
+  });
+
   it("no chunk exceeds 2000 characters", () => {
     const text = "A".repeat(5000);
     const chunks = chunkContent(text, { maxChars: 1950, maxLines: 0 });
