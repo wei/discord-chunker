@@ -62,6 +62,8 @@ async function build() {
               if (result.errors.length === 0) {
                 assemble(result);
                 console.log(`[watch] Rebuilt at ${new Date().toLocaleTimeString()}`);
+              } else {
+                console.error(`[watch] Build failed with ${result.errors.length} error(s)`);
               }
             });
           },
