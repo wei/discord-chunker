@@ -80,7 +80,11 @@ export function chunkContent(content: string, config: ChunkerConfig): string[] {
       }
     }
 
-    // Hard-cut: single line exceeds maxChars
+    // Hard-cut: single line exceeds maxChars.
+    // Note: hard-cuts split at raw character boundaries without preserving
+    // semantic structure (e.g. markdown links or words). This is acceptable
+    // because lines this long are atypical in practice, and Discord's API
+    // will reject messages with excessively long lines regardless.
     if (line.length > maxChars) {
       flush();
 
