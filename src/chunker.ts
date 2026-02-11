@@ -83,16 +83,48 @@ export function chunkContent(content: string, config: ChunkerConfig): string[] {
     // Hard-cut: single line exceeds maxChars
     if (line.length > maxChars) {
       flush();
-      let remaining = line;
-      while (remaining.length > maxChars) {
-        chunks.push(remaining.slice(0, maxChars));
-        remaining = remaining.slice(maxChars);
+
+      // If we are inside an active fence, preserve fence reopening at the
+      // start of every hard-cut chunk and close on every flush.
+      if (fence) {
+        let remaining = line;
+        while (remaining.length > 0) {
+          const joinCost = current.length > 0 ? 1 : 0;
+          const closeLine = fence.markerChar.repeat(fence.markerLen);
+          const fenceCloseOverhead = 1 + closeLine.length; // \n + close
+          const room = maxChars - currentChars - joinCost - fenceCloseOverhead;
+
+          if (room <= 0) {
+            throw new Error(
+              `Unable to chunk: maxChars (${maxChars}) is too small to preserve active code fence wrappers.`,
+            );
+          }
+
+          const take = Math.min(room, remaining.length);
+          const piece = remaining.slice(0, take);
+          current.push(piece);
+          currentChars =
+            current.length === 1 ? piece.length : currentChars + joinCost + piece.length;
+          currentContentLines += lineIsFence ? 0 : 1;
+          remaining = remaining.slice(take);
+
+          if (remaining.length > 0) {
+            flush();
+          }
+        }
+      } else {
+        let remaining = line;
+        while (remaining.length > maxChars) {
+          chunks.push(remaining.slice(0, maxChars));
+          remaining = remaining.slice(maxChars);
+        }
+        if (remaining.length > 0) {
+          current = [remaining];
+          currentChars = remaining.length;
+          currentContentLines = lineIsFence ? 0 : 1;
+        }
       }
-      if (remaining.length > 0) {
-        current = [remaining];
-        currentChars = remaining.length;
-        currentContentLines = lineIsFence ? 0 : 1;
-      }
+
       // Update fence state for this line
       if (fenceMatch) {
         const marker = fenceMatch[2];

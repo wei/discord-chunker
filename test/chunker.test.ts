@@ -48,6 +48,18 @@ describe("chunkContent", () => {
     expect(chunks).toEqual(["A".repeat(100), "A".repeat(100)]);
   });
 
+  it("preserves reopened fence when hard-cut happens inside an active code block", () => {
+    const text = `\`\`\`js\nshort\n${"A".repeat(220)}\nend\n\`\`\``;
+    const chunks = chunkContent(text, { maxChars: 100, maxLines: 0 });
+
+    expect(chunks.length).toBeGreaterThan(2);
+    expect(chunks[1]).toMatch(/^```js\n/);
+    for (const chunk of chunks) {
+      const fenceCount = (chunk.match(/```/g) || []).length;
+      expect(fenceCount % 2).toBe(0);
+    }
+  });
+
   it("never splits mid-line when line fits individually", () => {
     const text = `${"A".repeat(40)}\n${"B".repeat(40)}\n${"C".repeat(40)}`;
     const chunks = chunkContent(text, { maxChars: 100, maxLines: 0 });
