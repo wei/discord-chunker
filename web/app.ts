@@ -11,6 +11,7 @@ import { generateCurl } from "./curl-generator";
 import DEFAULT_EXAMPLE from "./example.md";
 import { renderDiscordMarkdown } from "./markdown";
 import { convertWebhookUrl, extractWebhookParts, isValidWebhookUrl } from "./url-converter";
+import { WEBHOOK_URL_PATTERN } from "./webhook-pattern";
 
 // Discord webhook bot avatar SVG (simple bot icon)
 const BOT_AVATAR_SVG =
@@ -198,8 +199,9 @@ function init(): void {
       <div class="section" id="url-converter">
         <div class="section-title">Convert Your Webhook URL</div>
         <input type="text" class="dc-input" id="webhook-url"
-          placeholder="https://discord.com/api/webhooks/..." />
-        <div id="converted-url-group" class="converted-output" style="display:none">
+          placeholder="https://discord.com/api/webhooks/..."
+          pattern="${WEBHOOK_URL_PATTERN}" />
+        <div id="converted-url-group" class="converted-output" hidden>
           <code id="converted-url"></code>
           <button class="dc-btn dc-btn-secondary" id="copy-url-btn" type="button" aria-label="Copy proxy URL to clipboard">Copy</button>
         </div>
@@ -238,12 +240,13 @@ function init(): void {
   const convertedUrl = document.getElementById("converted-url") as HTMLElement;
 
   webhookInput.addEventListener("input", () => {
-    const proxy = convertWebhookUrl(webhookInput.value.trim());
+    const proxy = convertWebhookUrl(webhookInput.value);
     if (proxy) {
       convertedUrl.textContent = proxy;
-      convertedGroup.style.display = "flex";
+      convertedGroup.hidden = false;
     } else {
-      convertedGroup.style.display = "none";
+      convertedUrl.textContent = "";
+      convertedGroup.hidden = true;
     }
   });
 
@@ -274,14 +277,16 @@ function init(): void {
   const sendBtn = document.getElementById("send-btn") as HTMLButtonElement;
   sendBtn?.addEventListener("click", async () => {
     let content = contentInput.value;
-    const webhookUrl = webhookInput.value.trim();
+    const webhookUrl = webhookInput.value;
 
     if (!content.trim()) {
       showStatus("Enter some content first", true);
       return;
     }
-    if (!isValidWebhookUrl(webhookUrl)) {
-      showStatus("Enter a valid Discord webhook URL above to send", true);
+
+    if (!webhookInput.checkValidity()) {
+      webhookInput.reportValidity();
+      showStatus("Invalid webhook URL", true);
       return;
     }
 
@@ -318,7 +323,7 @@ function init(): void {
   // Copy curl
   document.getElementById("copy-curl-btn")?.addEventListener("click", () => {
     let content = contentInput.value;
-    const webhookUrl = webhookInput.value.trim();
+    const webhookUrl = webhookInput.value;
 
     if (!content.trim()) {
       showStatus("Enter some content first", true);
