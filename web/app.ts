@@ -198,7 +198,8 @@ function init(): void {
       <div class="section" id="url-converter">
         <div class="section-title">Convert Your Webhook URL</div>
         <input type="text" class="dc-input" id="webhook-url"
-          placeholder="https://discord.com/api/webhooks/..." />
+          placeholder="https://discord.com/api/webhooks/..."
+          pattern="^https://(discord\.com|discordapp\.com)/api/webhooks/\d+/[^/?#]+(\?[^#]*)?$" />
         <div id="converted-url-group" class="converted-output" style="display:none">
           <code id="converted-url"></code>
           <button class="dc-btn dc-btn-secondary" id="copy-url-btn" type="button" aria-label="Copy proxy URL to clipboard">Copy</button>
@@ -278,10 +279,6 @@ function init(): void {
 
     if (!content.trim()) {
       showStatus("Enter some content first", true);
-      return;
-    }
-    if (!isValidWebhookUrl(webhookUrl)) {
-      showStatus("Enter a valid Discord webhook URL above to send", true);
       return;
     }
 
