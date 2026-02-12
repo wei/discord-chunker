@@ -117,7 +117,8 @@ body {
   box-shadow: 0 0 0 2px var(--brand);
 }
 
-.dc-input:not(:placeholder-shown):invalid {
+.dc-input:not(:placeholder-shown):invalid,
+.dc-input:not(:placeholder-shown):invalid:focus {
   box-shadow: 0 0 0 2px var(--red);
 }
 
