@@ -116,12 +116,15 @@ body {
 .dc-input:focus {
   box-shadow: 0 0 0 2px var(--brand);
 }
+
 .dc-input:not(:placeholder-shown):invalid {
   box-shadow: 0 0 0 2px var(--red);
 }
+
 .dc-input:not(:placeholder-shown):invalid + .converted-output {
-  display: none !important;
+  display: none;
 }
+
 .dc-input::placeholder {
   color: var(--text-muted);
 }
