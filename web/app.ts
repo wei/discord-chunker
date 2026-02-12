@@ -11,6 +11,7 @@ import { generateCurl } from "./curl-generator";
 import DEFAULT_EXAMPLE from "./example.md";
 import { renderDiscordMarkdown } from "./markdown";
 import { convertWebhookUrl, extractWebhookParts, isValidWebhookUrl } from "./url-converter";
+import { WEBHOOK_URL_PATTERN } from "./webhook-pattern";
 
 // Discord webhook bot avatar SVG (simple bot icon)
 const BOT_AVATAR_SVG =
@@ -199,7 +200,7 @@ function init(): void {
         <div class="section-title">Convert Your Webhook URL</div>
         <input type="text" class="dc-input" id="webhook-url"
           placeholder="https://discord.com/api/webhooks/..."
-          pattern="https://(discord\\.com|discordapp\\.com)/api/webhooks/\\d+/[^/?#]+(\\?[^#]*)?" />
+          pattern="${WEBHOOK_URL_PATTERN}" />
         <div id="converted-url-group" class="converted-output" style="display:none">
           <code id="converted-url"></code>
           <button class="dc-btn dc-btn-secondary" id="copy-url-btn" type="button" aria-label="Copy proxy URL to clipboard">Copy</button>
