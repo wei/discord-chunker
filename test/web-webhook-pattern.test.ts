@@ -7,6 +7,9 @@ describe("WEBHOOK_URL_PATTERN", () => {
 
     expect(regex.test("https://discord.com/api/webhooks/123/token")).toBe(true);
     expect(regex.test("https://discordapp.com/api/webhooks/123/token?wait=true")).toBe(true);
+    expect(regex.test("https://DISCORD.COM/api/webhooks/123/token")).toBe(false);
+    expect(regex.test("https://discord.com/api/webhooks/123/to ken")).toBe(false);
+    expect(regex.test("https://discord.com/api/webhooks/123/token?wait=true and_more")).toBe(false);
     expect(regex.test("https://example.com/api/webhooks/123/token")).toBe(false);
     expect(regex.test("abc")).toBe(false);
   });

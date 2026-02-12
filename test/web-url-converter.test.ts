@@ -47,6 +47,18 @@ describe("URL Converter", () => {
     expect(convertWebhookUrl(input, ORIGIN)).toBeNull();
   });
 
+  it("rejects whitespace in token", () => {
+    const input = "https://discord.com/api/webhooks/123/my token";
+    expect(isValidWebhookUrl(input)).toBe(false);
+    expect(convertWebhookUrl(input, ORIGIN)).toBeNull();
+  });
+
+  it("rejects whitespace in query", () => {
+    const input = "https://discord.com/api/webhooks/123/token?wait=true and_more";
+    expect(isValidWebhookUrl(input)).toBe(false);
+    expect(convertWebhookUrl(input, ORIGIN)).toBeNull();
+  });
+
   it("uses provided origin for proxy URL", () => {
     const input = "https://discord.com/api/webhooks/123/token";
     expect(convertWebhookUrl(input, "http://localhost:8787")).toBe(
@@ -103,6 +115,16 @@ describe("extractWebhookParts", () => {
     const result = extractWebhookParts("https://DISCORD.COM/api/webhooks/123/mytoken");
     expect(result).toBeNull();
   });
+
+  it("rejects whitespace in token", () => {
+    const result = extractWebhookParts("https://discord.com/api/webhooks/123/my token");
+    expect(result).toBeNull();
+  });
+
+  it("rejects whitespace in query", () => {
+    const result = extractWebhookParts("https://discord.com/api/webhooks/123/mytoken?wait=true x");
+    expect(result).toBeNull();
+  });
 });
 
 describe("webhook URL validation parity", () => {
@@ -132,6 +154,16 @@ describe("webhook URL validation parity", () => {
     {
       label: "query plus fragment",
       input: "https://discord.com/api/webhooks/123/token?wait=true#fragment",
+      valid: false,
+    },
+    {
+      label: "whitespace in token",
+      input: "https://discord.com/api/webhooks/123/to ken",
+      valid: false,
+    },
+    {
+      label: "whitespace in query",
+      input: "https://discord.com/api/webhooks/123/token?wait=true and_more",
       valid: false,
     },
   ] as const;
