@@ -11,7 +11,7 @@ export function convertWebhookUrl(url: string, origin?: string): string | null {
   if (!match) return null;
   const [, , id, token, query] = match;
   const base = origin || window.location.origin;
-  return `${base}/api/webhook/${id}/${token}${query || ""}`;
+  return `${base}/api/webhooks/${id}/${token}${query || ""}`;
 }
 
 const DISCORD_HOSTS = new Set(["discord.com", "discordapp.com"]);

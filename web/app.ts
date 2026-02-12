@@ -295,7 +295,7 @@ function init(): void {
     content = preprocessContent(content);
     sendBtn.disabled = true;
     try {
-      const resp = await fetch(`/api/webhook/${id}/${token}${search}`, {
+      const resp = await fetch(`/api/webhooks/${id}/${token}${search}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content }),
@@ -328,7 +328,7 @@ function init(): void {
     content = preprocessContent(content);
     const proxyUrl = isValidWebhookUrl(webhookUrl)
       ? convertWebhookUrl(webhookUrl)
-      : `${window.location.origin}/api/webhook/YOUR_ID/YOUR_TOKEN`;
+      : `${window.location.origin}/api/webhooks/YOUR_ID/YOUR_TOKEN`;
 
     const curl = generateCurl(proxyUrl || "", content);
     copyToClipboard(curl, "curl command");

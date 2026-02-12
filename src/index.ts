@@ -71,10 +71,10 @@ export default {
       return new Response("Method not allowed", { status: 405 });
     }
 
-    // Route: /api/webhook/{id}/{token}
-    const match = url.pathname.match(/^\/api\/webhook\/(\d+)\/([^/]+)$/);
+    // Route: /api/webhooks/{id}/{token}
+    const match = url.pathname.match(/^\/api\/webhooks\/(\d+)\/([^/]+)$/);
     if (!match) {
-      return jsonError("Invalid path. Use: /api/webhook/{id}/{token}", 404);
+      return jsonError("Invalid path. Use: /api/webhooks/{id}/{token}", 404);
     }
 
     const [, webhookId, webhookToken] = match;

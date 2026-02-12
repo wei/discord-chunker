@@ -7,13 +7,13 @@ describe("URL Converter", () => {
   it("converts discord.com webhook URL to proxy URL", () => {
     const input = "https://discord.com/api/webhooks/123456/abctoken";
     const result = convertWebhookUrl(input, ORIGIN);
-    expect(result).toBe("https://discord.git.ci/api/webhook/123456/abctoken");
+    expect(result).toBe("https://discord.git.ci/api/webhooks/123456/abctoken");
   });
 
   it("handles discordapp.com variant", () => {
     const input = "https://discordapp.com/api/webhooks/123456/abctoken";
     const result = convertWebhookUrl(input, ORIGIN);
-    expect(result).toBe("https://discord.git.ci/api/webhook/123456/abctoken");
+    expect(result).toBe("https://discord.git.ci/api/webhooks/123456/abctoken");
   });
 
   it("returns null for invalid URLs", () => {
@@ -31,7 +31,7 @@ describe("URL Converter", () => {
   it("preserves query params", () => {
     const input = "https://discord.com/api/webhooks/123/token?wait=true&thread_id=456";
     const result = convertWebhookUrl(input, ORIGIN);
-    expect(result).toBe("https://discord.git.ci/api/webhook/123/token?wait=true&thread_id=456");
+    expect(result).toBe("https://discord.git.ci/api/webhooks/123/token?wait=true&thread_id=456");
   });
 
   it("strips URL fragments", () => {
@@ -49,7 +49,7 @@ describe("URL Converter", () => {
   it("uses provided origin for proxy URL", () => {
     const input = "https://discord.com/api/webhooks/123/token";
     expect(convertWebhookUrl(input, "http://localhost:8787")).toBe(
-      "http://localhost:8787/api/webhook/123/token",
+      "http://localhost:8787/api/webhooks/123/token",
     );
   });
 });
