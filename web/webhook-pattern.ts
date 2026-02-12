@@ -4,3 +4,18 @@
 export const WEBHOOK_URL_PATTERN = String.raw`https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\/(\d+)\/([^\/?#]+)(\?[^#]*)?`;
 
 export const WEBHOOK_URL_REGEX = new RegExp(`^${WEBHOOK_URL_PATTERN}$`);
+
+export type WebhookUrlParts = {
+  host: string;
+  id: string;
+  token: string;
+  search: string;
+};
+
+export function parseWebhookUrl(url: string): WebhookUrlParts | null {
+  const match = url.match(WEBHOOK_URL_REGEX);
+  if (!match) return null;
+
+  const [, host, id, token, search = ""] = match;
+  return { host, id, token, search };
+}

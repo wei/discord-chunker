@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { convertWebhookUrl, extractWebhookParts, isValidWebhookUrl } from "../web/url-converter";
+import { WEBHOOK_URL_PATTERN } from "../web/webhook-pattern";
 
 const ORIGIN = "https://discord.git.ci";
 
@@ -34,13 +35,13 @@ describe("URL Converter", () => {
     expect(result).toBe("https://discord.git.ci/api/webhooks/123/token?wait=true&thread_id=456");
   });
 
-  it("strips URL fragments", () => {
+  it("rejects URL fragments", () => {
     const input = "https://discord.com/api/webhooks/123/token#fragment";
     expect(isValidWebhookUrl(input)).toBe(false);
     expect(convertWebhookUrl(input, ORIGIN)).toBeNull();
   });
 
-  it("strips fragments but keeps query params", () => {
+  it("rejects fragments even when query params are present", () => {
     const input = "https://discord.com/api/webhooks/123/token?wait=true#fragment";
     expect(isValidWebhookUrl(input)).toBe(false);
     expect(convertWebhookUrl(input, ORIGIN)).toBeNull();
@@ -86,16 +87,66 @@ describe("extractWebhookParts", () => {
     expect(result).toEqual({ id: "123", token: "mytoken", search: "" });
   });
 
-  it("strips fragment from extracted parts", () => {
+  it("rejects fragment URLs to match converter and HTML validation", () => {
     const result = extractWebhookParts("https://discord.com/api/webhooks/123/mytoken#fragment");
-    // URL constructor strips fragments from hash but they don't affect search
-    expect(result).toEqual({ id: "123", token: "mytoken", search: "" });
+    expect(result).toBeNull();
   });
 
-  it("strips fragment but preserves query in extracted parts", () => {
+  it("rejects fragments even when query params are present", () => {
     const result = extractWebhookParts(
       "https://discord.com/api/webhooks/123/mytoken?wait=true#fragment",
     );
-    expect(result).toEqual({ id: "123", token: "mytoken", search: "?wait=true" });
+    expect(result).toBeNull();
   });
+
+  it("rejects uppercase hostnames to match converter and HTML validation", () => {
+    const result = extractWebhookParts("https://DISCORD.COM/api/webhooks/123/mytoken");
+    expect(result).toBeNull();
+  });
+});
+
+describe("webhook URL validation parity", () => {
+  const htmlPatternRegex = new RegExp(`^(?:${WEBHOOK_URL_PATTERN})$`, "v");
+
+  const cases = [
+    {
+      label: "valid discord.com URL",
+      input: "https://discord.com/api/webhooks/123/token",
+      valid: true,
+    },
+    {
+      label: "valid discordapp.com URL with query",
+      input: "https://discordapp.com/api/webhooks/123/token?wait=true",
+      valid: true,
+    },
+    {
+      label: "uppercase host",
+      input: "https://DISCORD.COM/api/webhooks/123/token",
+      valid: false,
+    },
+    {
+      label: "fragment",
+      input: "https://discord.com/api/webhooks/123/token#fragment",
+      valid: false,
+    },
+    {
+      label: "query plus fragment",
+      input: "https://discord.com/api/webhooks/123/token?wait=true#fragment",
+      valid: false,
+    },
+  ] as const;
+
+  for (const testCase of cases) {
+    it(`keeps HTML pattern, converter, and send parser aligned for ${testCase.label}`, () => {
+      const htmlValid = htmlPatternRegex.test(testCase.input);
+      const converterValid = isValidWebhookUrl(testCase.input);
+      const convertedUrl = convertWebhookUrl(testCase.input, ORIGIN);
+      const parsed = extractWebhookParts(testCase.input);
+
+      expect(htmlValid).toBe(testCase.valid);
+      expect(converterValid).toBe(testCase.valid);
+      expect(convertedUrl !== null).toBe(testCase.valid);
+      expect(parsed !== null).toBe(testCase.valid);
+    });
+  }
 });
