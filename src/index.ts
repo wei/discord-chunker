@@ -12,6 +12,10 @@ function jsonError(error: string, status: number): Response {
   });
 }
 
+function sanitizeLogPath(pathname: string): string {
+  return pathname.replace(/^\/api\/webhooks\/\d+\/[^/]+$/, "/api/webhooks/:id/:token");
+}
+
 export default {
   async fetch(request: Request): Promise<Response> {
     const startMs = Date.now();
@@ -22,7 +26,7 @@ export default {
     const wideEvent: Record<string, unknown> = {
       request_id: requestId,
       method: request.method,
-      path: url.pathname,
+      path: sanitizeLogPath(url.pathname),
       request_user_agent: request.headers.get("User-Agent") || "unknown",
       cf_ray: request.headers.get("CF-Ray") || undefined,
       cf_colo: (request as unknown as { cf?: { colo?: string } }).cf?.colo,
@@ -43,7 +47,7 @@ export default {
     wideEvent.status_code = response.status;
     wideEvent.outcome = response.status < 400 ? "success" : "error";
 
-    if (response.status >= 500) {
+    if (response.status >= 400) {
       logError(wideEvent);
     } else {
       logInfo(wideEvent);
@@ -102,6 +106,7 @@ export default {
     }
 
     if (request.method !== "POST") {
+      wideEvent.route_kind = "method_not_allowed";
       return new Response("Method not allowed", { status: 405 });
     }
 
@@ -232,6 +237,7 @@ export default {
 
     wideEvent.chunks_sent = result.chunksSent;
     wideEvent.retry_count = result.retryCount;
+    wideEvent.discord_last_status = result.lastStatus;
 
     if (!result.success) {
       const errorBody: Record<string, unknown> = {

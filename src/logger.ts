@@ -6,13 +6,13 @@ type LogLevel = "info" | "error";
 
 function emit(level: LogLevel, event: Record<string, unknown>): void {
   const payload = {
+    ...event,
     timestamp: new Date().toISOString(),
     level,
     service,
     service_version: serviceVersion,
     service_user_agent: USER_AGENT,
     runtime: "cloudflare-workers",
-    ...event,
   };
 
   const line = JSON.stringify(payload);

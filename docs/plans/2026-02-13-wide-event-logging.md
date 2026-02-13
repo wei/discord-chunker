@@ -1,7 +1,5 @@
 # Wide Event Logging for Discord Chunker Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
 **Goal:** Add structured, canonical wide-event logging so each request emits exactly one context-rich log line with operational and business context.
 
 **Architecture:** Introduce a single logger module that emits JSON events with shared service metadata, then instrument the worker request lifecycle so logging happens in a single `finally` path. Remove scattered retry warnings/errors from chunk send flow and return retry telemetry so the request-level wide event remains complete.
@@ -9,6 +7,8 @@
 **Tech Stack:** TypeScript, Cloudflare Workers runtime, Vitest (`cloudflare:test`), Biome linting
 
 ---
+
+## Implementation Tasks
 
 ### Task 1: Add test coverage for logger output schema
 

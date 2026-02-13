@@ -167,4 +167,20 @@ describe("Logging", () => {
     expect(parsed.outcome).toBe("error");
     expect(parsed.status_code).toBe(404);
   });
+
+  it("redacts webhook token from logged path and tags method_not_allowed", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const resp = await SELF.fetch("https://example.com/api/webhooks/123/super-secret-token", {
+      method: "PUT",
+    });
+
+    expect(resp.status).toBe(405);
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+
+    const parsed = JSON.parse(errorSpy.mock.calls[0][0] as string) as Record<string, unknown>;
+    expect(parsed.route_kind).toBe("method_not_allowed");
+    expect(parsed.path).toBe("/api/webhooks/:id/:token");
+    expect(String(parsed.path)).not.toContain("super-secret-token");
+  });
 });

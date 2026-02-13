@@ -133,6 +133,8 @@ describe("sendChunks", () => {
       type: 0,
       content: "test",
     });
+    expect(result.retryCount).toBe(0);
+    expect(result.lastStatus).toBe(200);
     expect(result.lastError).toBeNull();
 
     // Verify wait=true was in the URL
@@ -200,6 +202,8 @@ describe("sendChunks", () => {
     const result = await sendChunks([{ content: "hello" }], "123", "token", undefined, true);
 
     expect(result.success).toBe(true);
+    expect(result.retryCount).toBe(1);
+    expect(result.lastStatus).toBe(200);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
@@ -211,6 +215,8 @@ describe("sendChunks", () => {
     const result = await sendChunks([{ content: "hello" }], "123", "token", undefined, true);
 
     expect(result.success).toBe(true);
+    expect(result.retryCount).toBe(1);
+    expect(result.lastStatus).toBe(200);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
@@ -231,6 +237,8 @@ describe("sendChunks", () => {
     expect(result.success).toBe(false);
     expect(result.chunksSent).toBe(1);
     expect(result.chunksTotal).toBe(2);
+    expect(result.retryCount).toBe(1);
+    expect(result.lastStatus).toBe(500);
     expect(result.lastError).toContain("500");
     expect(result.lastError).toContain("after retry");
   });
