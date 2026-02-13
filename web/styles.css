@@ -32,6 +32,7 @@
   margin: 0;
   padding: 0;
 }
+
 html {
   font-size: 14px;
 }
@@ -213,6 +214,7 @@ body {
   border-radius: var(--radius-sm);
   border-left: 3px solid var(--brand);
 }
+
 .converted-output code {
   flex: 1;
   font-family: var(--font-code);
@@ -729,4 +731,9 @@ body {
   .dc-message-continuation {
     padding-left: 3.5rem;
   }
+}
+
+/* Ensure native hidden attribute always wins over component display rules */
+[hidden] {
+  display: none;
 }
