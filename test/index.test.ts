@@ -1,5 +1,14 @@
-import { SELF } from "cloudflare:test";
-import { describe, expect, it } from "vitest";
+import { fetchMock, SELF } from "cloudflare:test";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+beforeEach(() => {
+  fetchMock.activate();
+  fetchMock.disableNetConnect();
+});
+
+afterEach(() => {
+  fetchMock.deactivate();
+});
 
 describe("Worker", () => {
   it("returns health status with service and user agent details", async () => {
@@ -28,6 +37,39 @@ describe("Worker", () => {
   it("rejects non-POST requests", async () => {
     const resp = await SELF.fetch("https://example.com/api/webhooks/123/token", {
       method: "GET",
+    });
+    expect(resp.status).toBe(405);
+  });
+
+  it("passes through multipart/form-data to Discord", async () => {
+    fetchMock
+      .get("https://discord.com")
+      .intercept({ path: /^\/api\/webhooks\//, method: "POST" })
+      .reply(200, JSON.stringify({ id: "file1" }), {
+        headers: { "Content-Type": "application/json" },
+      });
+
+    const resp = await SELF.fetch("https://example.com/api/webhooks/123/token?wait=true", {
+      method: "POST",
+      headers: { "Content-Type": "multipart/form-data; boundary=----test" },
+      body: '------test\r\nContent-Disposition: form-data; name="payload_json"\r\n\r\n{}\r\n------test--',
+    });
+
+    expect(resp.status).toBe(200);
+  });
+
+  it("returns 405 for non-POST non-GET methods", async () => {
+    const resp = await SELF.fetch("https://example.com/api/webhooks/123/token", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: "hello" }),
+    });
+    expect(resp.status).toBe(405);
+  });
+
+  it("returns 405 for DELETE method", async () => {
+    const resp = await SELF.fetch("https://example.com/api/webhooks/123/token", {
+      method: "DELETE",
     });
     expect(resp.status).toBe(405);
   });

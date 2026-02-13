@@ -23,6 +23,18 @@ describe("countLines", () => {
   it("handles nested/multiple fence blocks", () => {
     expect(countLines("before\n```\ncode\n```\nafter")).toBe(3);
   });
+
+  it("excludes indented fence lines", () => {
+    expect(countLines("   ```\ncode\n   ```")).toBe(1);
+  });
+
+  it("returns 0 for fence-only content", () => {
+    expect(countLines("```\n```")).toBe(0);
+  });
+
+  it("handles single line", () => {
+    expect(countLines("hello world")).toBe(1);
+  });
 });
 
 describe("chunkContent", () => {
@@ -118,6 +130,51 @@ describe("chunkContent", () => {
     expect(chunks.length).toBeGreaterThan(1);
   });
 
+  // --- Tilde fences ---
+  it("handles tilde fence blocks", () => {
+    const text = "~~~\ncode\n~~~";
+    const chunks = chunkContent(text, { maxChars: 1950, maxLines: 20 });
+    expect(chunks).toEqual([text]);
+  });
+
+  it("closes and reopens tilde fence when split across chunks", () => {
+    const code = `~~~\n${Array(10).fill("code").join("\n")}\n~~~`;
+    const chunks = chunkContent(code, { maxChars: 50000, maxLines: 5 });
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(chunks[0]).toMatch(/~~~$/);
+    expect(chunks[1]).toMatch(/^~~~/);
+  });
+
+  it("does not close backtick fence with tilde markers", () => {
+    const text = "```js\ncode\n~~~\nmore\n```";
+    const chunks = chunkContent(text, { maxChars: 1950, maxLines: 20 });
+    expect(chunks).toEqual([text]);
+  });
+
+  it("does not close tilde fence with backtick markers", () => {
+    const text = "~~~\ncode\n```\nmore\n~~~";
+    const chunks = chunkContent(text, { maxChars: 1950, maxLines: 20 });
+    expect(chunks).toEqual([text]);
+  });
+
+  it("requires matching or longer marker length to close fence", () => {
+    const text = "````\ncode\n```\nstill code\n````";
+    const chunks = chunkContent(text, { maxChars: 1950, maxLines: 20 });
+    expect(chunks).toEqual([text]);
+  });
+
+  it("handles indented fence opening (up to 3 spaces)", () => {
+    const text = "   ```js\ncode\n   ```";
+    const chunks = chunkContent(text, { maxChars: 1950, maxLines: 20 });
+    expect(chunks).toEqual([text]);
+  });
+
+  it("fence delimiters with tilde markers excluded from line count", () => {
+    const text = "~~~\na\nb\nc\n~~~";
+    const chunks = chunkContent(text, { maxChars: 50000, maxLines: 3 });
+    expect(chunks).toEqual([text]);
+  });
+
   // --- Fence close/reopen across chunks ---
   it("closes and reopens fence when split lands inside code block", () => {
     const code = `\`\`\`js\n${Array(10).fill("code").join("\n")}\n\`\`\``;
@@ -185,6 +242,36 @@ describe("chunkContent", () => {
     const chunks = chunkContent(text, { maxChars: 1950, maxLines: 0 });
     for (const chunk of chunks) {
       expect(chunk.length).toBeLessThanOrEqual(2000);
+    }
+  });
+
+  it("throws when maxChars too small for fence wrapper overhead", () => {
+    const text = `\`\`\`js\n${"A".repeat(200)}\n\`\`\``;
+    expect(() => chunkContent(text, { maxChars: 10, maxLines: 0 })).toThrow(
+      "too small to preserve active code fence wrappers",
+    );
+  });
+
+  it("handles content that is only newlines", () => {
+    const text = "\n\n\n";
+    const chunks = chunkContent(text, { maxChars: 1950, maxLines: 20 });
+    expect(chunks).toEqual([text]);
+  });
+
+  it("handles single fence line without closing", () => {
+    const text = "```js\ncode without close";
+    const chunks = chunkContent(text, { maxChars: 1950, maxLines: 20 });
+    expect(chunks).toEqual([text]);
+  });
+
+  it("preserves content integrity across all chunks", () => {
+    const lines = Array.from({ length: 50 }, (_, i) => `line ${i + 1}`);
+    const text = lines.join("\n");
+    const chunks = chunkContent(text, { maxChars: 200, maxLines: 5 });
+    const reassembled = chunks.join("\n");
+    const reassembledLines = reassembled.split("\n");
+    for (const line of lines) {
+      expect(reassembledLines).toContain(line);
     }
   });
 });

@@ -81,4 +81,58 @@ describe("renderDiscordMarkdown", () => {
     expect(html).toContain("&lt;script&gt;");
     expect(html).not.toContain("<script>");
   });
+
+  test("returns empty string for empty input", () => {
+    expect(renderDiscordMarkdown("")).toBe("");
+  });
+
+  test("normalizes CRLF line endings", () => {
+    const html = renderDiscordMarkdown("line1\r\nline2");
+    expect(html).not.toContain("\r");
+    expect(html).toContain("line1");
+    expect(html).toContain("line2");
+  });
+
+  test("handles unclosed code fence", () => {
+    const html = renderDiscordMarkdown("```js\nconst x = 1;");
+    expect(html).toContain("const");
+    expect(html).toContain("x");
+  });
+
+  test("renders ordered list with custom start number", () => {
+    const html = renderDiscordMarkdown("5. fifth\n6. sixth");
+    expect(html).toContain('<ol class="dc-md-list dc-md-list-ol" start="5">');
+    expect(html).toContain("<li>fifth</li>");
+    expect(html).toContain("<li>sixth</li>");
+  });
+
+  test("renders sub-header (-# syntax)", () => {
+    const html = renderDiscordMarkdown("-# small text");
+    expect(html).toContain("dc-md-header-sub");
+    expect(html).toContain("small text");
+  });
+
+  test("renders multiple consecutive code blocks", () => {
+    const html = renderDiscordMarkdown("```\nblock1\n```\n```\nblock2\n```");
+    expect(html).toContain("block1");
+    expect(html).toContain("block2");
+  });
+
+  test("renders inline code inside header", () => {
+    const html = renderDiscordMarkdown("## The `config` module");
+    expect(html).toContain("dc-md-header-2");
+    expect(html).toContain("<code");
+    expect(html).toContain("config");
+  });
+
+  test("joins consecutive paragraph lines with <br>", () => {
+    const html = renderDiscordMarkdown("first line\nsecond line");
+    expect(html).toContain("first line<br>second line");
+  });
+
+  test("breaks list when switching from unordered to ordered", () => {
+    const html = renderDiscordMarkdown("- unordered\n1. ordered");
+    expect(html).toContain("dc-md-list-ul");
+    expect(html).toContain("dc-md-list-ol");
+  });
 });
