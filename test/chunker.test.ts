@@ -145,6 +145,24 @@ describe("chunkContent", () => {
     expect(chunks).toEqual([text]);
   });
 
+  it("requires matching or longer marker length to close fence", () => {
+    const text = "````\ncode\n```\nstill code\n````";
+    const chunks = chunkContent(text, { maxChars: 1950, maxLines: 20 });
+    expect(chunks).toEqual([text]);
+  });
+
+  it("handles indented fence opening (up to 3 spaces)", () => {
+    const text = "   ```js\ncode\n   ```";
+    const chunks = chunkContent(text, { maxChars: 1950, maxLines: 20 });
+    expect(chunks).toEqual([text]);
+  });
+
+  it("fence delimiters with tilde markers excluded from line count", () => {
+    const text = "~~~\na\nb\nc\n~~~";
+    const chunks = chunkContent(text, { maxChars: 50000, maxLines: 3 });
+    expect(chunks).toEqual([text]);
+  });
+
   // --- Fence close/reopen across chunks ---
   it("closes and reopens fence when split lands inside code block", () => {
     const code = `\`\`\`js\n${Array(10).fill("code").join("\n")}\n\`\`\``;
