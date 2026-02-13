@@ -31,6 +31,23 @@ describe("parseConfig", () => {
     const config = parseConfig(params);
     expect(config.maxChars).toBe(1999.9);
   });
+
+  it("parses max_chars=2000 (boundary)", () => {
+    const params = new URLSearchParams("max_chars=2000");
+    expect(parseConfig(params).maxChars).toBe(2000);
+  });
+
+  it("parses max_chars=100 (boundary)", () => {
+    const params = new URLSearchParams("max_chars=100");
+    expect(parseConfig(params).maxChars).toBe(100);
+  });
+
+  it("parses negative number and lets validator catch it", () => {
+    const params = new URLSearchParams("max_lines=-5");
+    const config = parseConfig(params);
+    expect(config.maxLines).toBe(-5);
+    expect(validateConfig(config)).toContain("max_lines");
+  });
 });
 
 describe("validateConfig", () => {
