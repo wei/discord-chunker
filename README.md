@@ -73,6 +73,33 @@ pnpm dev        # Local dev server
 pnpm test       # Run tests
 ```
 
+## Testing
+
+### Unit & Integration Tests
+
+```bash
+pnpm test              # Run all unit/integration tests
+pnpm test:watch        # Watch mode for development
+```
+
+### E2E Tests (Puppeteer)
+
+```bash
+pnpm dev &             # Start dev server in background
+pnpm test:e2e          # Run Puppeteer E2E tests
+pnpm test:all          # Run all tests (unit + integration + E2E)
+```
+
+**Requirements:** Node.js >= 22, Chromium (installed automatically by Puppeteer)
+
+**E2E test coverage:**
+- Web UI interactions and form handling
+- Webhook proxy functionality
+- Markdown rendering in browser
+- Accessibility (WCAG AA compliance)
+- Error handling and edge cases
+- Performance under load
+
 ## Design
 
 See [design document](docs/plans/design.md) for full architecture details.
