@@ -250,6 +250,38 @@ describe("sendChunks", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it("uses default delay when remaining === 1 but resetAfterMs is null", async () => {
+    fetchMock
+      .mockResolvedValueOnce(mockDiscordResponse("msg1", { remaining: 1 }))
+      .mockResolvedValueOnce(mockDiscordResponse("msg2", { remaining: 4 }));
+
+    const result = await sendChunks([{ content: "chunk1" }, { content: "chunk2" }], "123", "token");
+
+    expect(result.success).toBe(true);
+    expect(result.chunksSent).toBe(2);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("sends correct User-Agent header", async () => {
+    fetchMock.mockResolvedValueOnce(mockDiscordResponse("msg1"));
+
+    await sendChunks([{ content: "hello" }], "123", "token");
+
+    const calledInit = fetchMock.mock.calls[0][1] as RequestInit;
+    const headers = calledInit.headers as Record<string, string>;
+    expect(headers["User-Agent"]).toMatch(/^discord-chunker\//);
+  });
+
+  it("sends correct Content-Type header", async () => {
+    fetchMock.mockResolvedValueOnce(mockDiscordResponse("msg1"));
+
+    await sendChunks([{ content: "hello" }], "123", "token");
+
+    const calledInit = fetchMock.mock.calls[0][1] as RequestInit;
+    const headers = calledInit.headers as Record<string, string>;
+    expect(headers["Content-Type"]).toBe("application/json");
+  });
+
   it("does NOT preemptively delay when remaining > 1", async () => {
     fetchMock
       .mockResolvedValueOnce(mockDiscordResponse("msg1", { remaining: 3 }))

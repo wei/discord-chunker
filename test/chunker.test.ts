@@ -234,7 +234,7 @@ describe("chunkContent", () => {
   });
 
   it("throws when maxChars too small for fence wrapper overhead", () => {
-    const text = "```js\n" + "A".repeat(200) + "\n```";
+    const text = `\`\`\`js\n${"A".repeat(200)}\n\`\`\``;
     expect(() => chunkContent(text, { maxChars: 10, maxLines: 0 })).toThrow(
       "too small to preserve active code fence wrappers",
     );
