@@ -251,15 +251,28 @@ describe("sendChunks", () => {
   });
 
   it("uses default delay when remaining === 1 but resetAfterMs is null", async () => {
+    vi.useFakeTimers();
+
     fetchMock
       .mockResolvedValueOnce(mockDiscordResponse("msg1", { remaining: 1 }))
-      .mockResolvedValueOnce(mockDiscordResponse("msg2", { remaining: 4 }));
+      .mockResolvedValueOnce(mockDiscordResponse("msg2", { remaining: 4 }))
+      .mockResolvedValueOnce(mockDiscordResponse("msg3", { remaining: 3 }));
 
-    const result = await sendChunks([{ content: "chunk1" }, { content: "chunk2" }], "123", "token");
+    const promise = sendChunks(
+      [{ content: "chunk1" }, { content: "chunk2" }, { content: "chunk3" }],
+      "123",
+      "token",
+    );
+
+    await vi.advanceTimersByTimeAsync(2500);
+
+    const result = await promise;
 
     expect(result.success).toBe(true);
-    expect(result.chunksSent).toBe(2);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result.chunksSent).toBe(3);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+
+    vi.useRealTimers();
   });
 
   it("sends correct User-Agent header", async () => {

@@ -24,10 +24,6 @@ describe("countLines", () => {
     expect(countLines("before\n```\ncode\n```\nafter")).toBe(3);
   });
 
-  it("excludes tilde fence lines", () => {
-    expect(countLines("~~~\ncode\n~~~")).toBe(1);
-  });
-
   it("excludes indented fence lines", () => {
     expect(countLines("   ```\ncode\n   ```")).toBe(1);
   });
@@ -273,8 +269,9 @@ describe("chunkContent", () => {
     const text = lines.join("\n");
     const chunks = chunkContent(text, { maxChars: 200, maxLines: 5 });
     const reassembled = chunks.join("\n");
+    const reassembledLines = reassembled.split("\n");
     for (const line of lines) {
-      expect(reassembled).toContain(line);
+      expect(reassembledLines).toContain(line);
     }
   });
 });

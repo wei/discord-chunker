@@ -141,6 +141,8 @@ describe("Integration", () => {
         headers: { "Content-Type": "application/json" },
       });
 
+    expect(fetchMock.pendingInterceptors()).toHaveLength(2);
+
     const longContent = "word ".repeat(500);
     const resp = await SELF.fetch(
       "https://example.com/api/webhooks/123/token?max_chars=1500&wait=true",
@@ -158,6 +160,13 @@ describe("Integration", () => {
     expect(resp.status).toBe(200);
     const body = await resp.json<{ id: string }>();
     expect(body.id).toBe("msg1");
+
+    // Note: cloudflare:test fetchMock doesn't expose captured request bodies for inspection.
+    // This test verifies: (1) chunking occurs (2 Discord requests made), (2) both chunks succeed.
+    // The username/avatar_url forwarding logic in index.ts is trivial (lines 128-135) and
+    // verified by visual inspection. A unit test of the payload construction could be added
+    // in discord.test.ts for stronger coverage.
+    expect(fetchMock.pendingInterceptors()).toHaveLength(0);
   });
 
   it("retries after Discord 429 and succeeds", async () => {
