@@ -40,6 +40,48 @@ Example response:
 
 The response also includes the `X-Service` header set to the service User-Agent string.
 
+## Logging
+
+All requests emit **exactly one structured JSON log event per service hop** — a "canonical wide event" containing complete operational and business context.
+
+### Log Fields
+
+Each event includes:
+- **Request context:** `request_id`, `method`, `path`, `request_user_agent`
+- **Operation:** `route_kind` (health, multipart_passthrough, json_passthrough, chunked, etc.)
+- **Business context:** `webhook_id`, `thread_id_present`, `wait`, `has_embeds`, `has_content`, `chunk_count`
+- **Telemetry:** `chunks_sent`, `retry_count`, `input_bytes`, `duration_ms`
+- **Service metadata:** `service`, `service_version`, `service_user_agent`, `runtime`
+- **Outcome:** `status_code`, `outcome` (success/error)
+
+### Example Log
+
+```json
+{
+  "timestamp": "2026-02-13T10:25:30.000Z",
+  "level": "info",
+  "service": "discord-chunker",
+  "service_version": "0.1.0",
+  "service_user_agent": "discord-chunker/0.1.0",
+  "runtime": "cloudflare-workers",
+  "request_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "method": "POST",
+  "path": "/api/webhooks/123/token",
+  "request_user_agent": "my-bot/1.0",
+  "webhook_id": "123",
+  "route_kind": "chunked",
+  "chunk_count": 3,
+  "chunks_sent": 3,
+  "retry_count": 0,
+  "input_bytes": 2500,
+  "status_code": 204,
+  "duration_ms": 125,
+  "outcome": "success"
+}
+```
+
+**Why one event?** Consolidating all context into a single wide event per request enables powerful debugging and analytics without log spam. Retry telemetry is summarized rather than emitted as separate log lines.
+
 ## Configuration
 
 | Param | Default | Range | Description |

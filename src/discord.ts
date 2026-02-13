@@ -55,6 +55,8 @@ export async function sendChunks(
 ): Promise<SendResult> {
   let firstMessageObject: Record<string, unknown> | null = null;
   let rateLimit: RateLimitState = { remaining: null, resetAfterMs: null };
+  let retryCount = 0;
+  let lastStatus: number | null = null;
 
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
@@ -90,18 +92,12 @@ export async function sendChunks(
       if (response.status === 429) {
         const retryAfter = response.headers.get("Retry-After");
         delayMs = retryAfter ? parseFloat(retryAfter) * 1000 : DEFAULT_RETRY_DELAY_MS;
-        console.warn(
-          `[discord-chunker] Rate limited (429) on chunk ${i + 1}/${chunks.length}, retrying after ${delayMs}ms`,
-        );
-      } else {
-        console.warn(
-          `[discord-chunker] Discord error ${failedStatus} on chunk ${i + 1}/${chunks.length}, retrying after ${delayMs}ms`,
-        );
       }
 
       // Drain error response body before retrying
       await response.text();
       await sleep(delayMs);
+      retryCount += 1;
 
       response = await fetch(webhookUrl, {
         method: "POST",
@@ -111,21 +107,21 @@ export async function sendChunks(
 
       if (!response.ok) {
         const retryStatus = response.status;
-        console.error(
-          `[discord-chunker] Retry failed (${retryStatus}) on chunk ${i + 1}/${chunks.length}, giving up`,
-        );
         await response.text(); // Drain retry error body
         return {
           success: false,
           firstMessageObject,
           chunksSent: i,
           chunksTotal: chunks.length,
+          retryCount,
+          lastStatus: retryStatus,
           lastError: `Discord API error: ${retryStatus} after retry (initial: ${failedStatus})`,
         };
       }
     }
 
     rateLimit = updateRateLimitState(response);
+    lastStatus = response.status;
 
     // Capture first message object if wait=true; drain all other response bodies
     if (isFirst && wait) {
@@ -140,6 +136,8 @@ export async function sendChunks(
     firstMessageObject,
     chunksSent: chunks.length,
     chunksTotal: chunks.length,
+    retryCount,
+    lastStatus,
     lastError: null,
   };
 }

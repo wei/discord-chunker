@@ -25,6 +25,8 @@ export interface SendResult {
   firstMessageObject: Record<string, unknown> | null;
   chunksSent: number;
   chunksTotal: number;
+  retryCount: number;
+  lastStatus: number | null;
   lastError: string | null; // e.g. "Discord API error: 429 after retry"
 }
 
