@@ -232,4 +232,33 @@ describe("chunkContent", () => {
       expect(chunk.length).toBeLessThanOrEqual(2000);
     }
   });
+
+  it("throws when maxChars too small for fence wrapper overhead", () => {
+    const text = "```js\n" + "A".repeat(200) + "\n```";
+    expect(() => chunkContent(text, { maxChars: 10, maxLines: 0 })).toThrow(
+      "too small to preserve active code fence wrappers",
+    );
+  });
+
+  it("handles content that is only newlines", () => {
+    const text = "\n\n\n";
+    const chunks = chunkContent(text, { maxChars: 1950, maxLines: 20 });
+    expect(chunks).toEqual([text]);
+  });
+
+  it("handles single fence line without closing", () => {
+    const text = "```js\ncode without close";
+    const chunks = chunkContent(text, { maxChars: 1950, maxLines: 20 });
+    expect(chunks).toEqual([text]);
+  });
+
+  it("preserves content integrity across all chunks", () => {
+    const lines = Array.from({ length: 50 }, (_, i) => `line ${i + 1}`);
+    const text = lines.join("\n");
+    const chunks = chunkContent(text, { maxChars: 200, maxLines: 5 });
+    const reassembled = chunks.join("\n");
+    for (const line of lines) {
+      expect(reassembled).toContain(line);
+    }
+  });
 });
