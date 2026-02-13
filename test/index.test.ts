@@ -168,7 +168,7 @@ describe("Logging", () => {
     expect(parsed.status_code).toBe(404);
   });
 
-  it("redacts webhook token from logged path and tags method_not_allowed", async () => {
+  it("redacts webhook token from logged paths", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     const resp = await SELF.fetch("https://example.com/api/webhooks/123/super-secret-token", {
@@ -182,5 +182,23 @@ describe("Logging", () => {
     expect(parsed.route_kind).toBe("method_not_allowed");
     expect(parsed.path).toBe("/api/webhooks/:id/:token");
     expect(String(parsed.path)).not.toContain("super-secret-token");
+
+    vi.clearAllMocks();
+
+    const trailingResp = await SELF.fetch(
+      "https://example.com/api/webhooks/123/super-secret-token/messages",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: "hello" }),
+      },
+    );
+
+    expect(trailingResp.status).toBe(404);
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+
+    const trailing = JSON.parse(errorSpy.mock.calls[0][0] as string) as Record<string, unknown>;
+    expect(String(trailing.path)).toContain("/api/webhooks/:id/:token");
+    expect(String(trailing.path)).not.toContain("super-secret-token");
   });
 });

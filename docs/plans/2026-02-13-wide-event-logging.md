@@ -197,7 +197,7 @@ Implementation requirements:
   - `chunk_count`, `chunks_sent`, `retry_count` (from send result).
 - Emit exactly one log in `finally`:
   - `status_code`, `outcome` (`success` / `error`), `duration_ms`.
-  - `logInfo` for non-5xx; `logError` for 5xx/exception paths.
+  - `logInfo` for `<400`; `logError` for `>=400` (4xx/5xx + exception paths).
 - Attach `X-Request-Id` to outgoing response headers in `fetch` wrapper.
 
 **Step 2: Replace scattered retry logs in `src/discord.ts` with telemetry**

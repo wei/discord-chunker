@@ -13,7 +13,7 @@ function jsonError(error: string, status: number): Response {
 }
 
 function sanitizeLogPath(pathname: string): string {
-  return pathname.replace(/^\/api\/webhooks\/\d+\/[^/]+$/, "/api/webhooks/:id/:token");
+  return pathname.replace(/^\/api\/webhooks\/\d+\/[^/]+/, "/api/webhooks/:id/:token");
 }
 
 export default {
@@ -134,6 +134,13 @@ export default {
     // Multipart passthrough (file uploads)
     if (contentType === "multipart") {
       wideEvent.route_kind = "multipart_passthrough";
+      const contentLength = request.headers.get("Content-Length");
+      if (contentLength) {
+        const parsed = Number.parseInt(contentLength, 10);
+        if (Number.isFinite(parsed)) {
+          wideEvent.input_bytes = parsed;
+        }
+      }
       const threadId = url.searchParams.get("thread_id") || undefined;
       wideEvent.thread_id_present = !!threadId;
       const wait = url.searchParams.has("wait")
@@ -200,6 +207,7 @@ export default {
         headers: { "Content-Type": "application/json", "User-Agent": USER_AGENT },
         body: JSON.stringify(payload),
       });
+      wideEvent.discord_last_status = resp.status;
       if (wait) {
         const respBody = await resp.text();
         return new Response(respBody, {
