@@ -36,40 +36,40 @@ export default {
       wideEvent.error_type = err instanceof Error ? err.name : "unknown";
       wideEvent.error_message = err instanceof Error ? err.message : String(err);
       response = jsonError("Internal server error", 500);
-    } finally {
-      const durationMs = Date.now() - startMs;
-      wideEvent.duration_ms = durationMs;
-      wideEvent.status_code = response.status;
-      wideEvent.outcome = response.status < 400 ? "success" : "error";
+    }
 
-      if (response.status >= 500) {
-        logError(wideEvent);
-      } else {
-        logInfo(wideEvent);
-      }
+    const durationMs = Date.now() - startMs;
+    wideEvent.duration_ms = durationMs;
+    wideEvent.status_code = response.status;
+    wideEvent.outcome = response.status < 400 ? "success" : "error";
 
-      // Ensure X-Request-Id and X-Service are in the final response
-      const headers = new Headers(response.headers);
-      headers.set("X-Request-Id", requestId);
-      headers.set("X-Service", USER_AGENT);
+    if (response.status >= 500) {
+      logError(wideEvent);
+    } else {
+      logInfo(wideEvent);
+    }
 
-      // Handle null body status codes
-      if ([101, 204, 205, 304].includes(response.status)) {
-        headers.delete("Content-Type");
-        headers.delete("Content-Length");
-        headers.delete("Transfer-Encoding");
-        response = new Response(null, {
-          status: response.status,
-          statusText: response.statusText,
-          headers,
-        });
-      } else {
-        response = new Response(response.body, {
-          status: response.status,
-          statusText: response.statusText,
-          headers,
-        });
-      }
+    // Ensure X-Request-Id and X-Service are in the final response
+    const headers = new Headers(response.headers);
+    headers.set("X-Request-Id", requestId);
+    headers.set("X-Service", USER_AGENT);
+
+    // Handle null body status codes
+    if ([101, 204, 205, 304].includes(response.status)) {
+      headers.delete("Content-Type");
+      headers.delete("Content-Length");
+      headers.delete("Transfer-Encoding");
+      response = new Response(null, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      });
+    } else {
+      response = new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      });
     }
 
     return response;

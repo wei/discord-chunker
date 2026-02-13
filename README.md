@@ -47,7 +47,7 @@ All requests emit **exactly one structured JSON log event per service hop** — 
 ### Log Fields
 
 Each event includes:
-- **Request context:** `request_id`, `method`, `path`, `request_user_agent`
+- **Request context:** `request_id`, `method`, `path`, `request_user_agent`, `cf_ray`, `cf_colo`, `query_present`
 - **Operation:** `route_kind` (health, multipart_passthrough, json_passthrough, chunked, etc.)
 - **Business context:** `webhook_id`, `thread_id_present`, `wait`, `has_embeds`, `has_content`, `chunk_count`
 - **Telemetry:** `chunks_sent`, `retry_count`, `input_bytes`, `duration_ms`
@@ -68,6 +68,9 @@ Each event includes:
   "method": "POST",
   "path": "/api/webhooks/123/token",
   "request_user_agent": "my-bot/1.0",
+  "cf_ray": "8540c123456789",
+  "cf_colo": "IAD",
+  "query_present": true,
   "webhook_id": "123",
   "route_kind": "chunked",
   "chunk_count": 3,
