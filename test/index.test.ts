@@ -1,5 +1,5 @@
 import { fetchMock, SELF } from "cloudflare:test";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 beforeEach(() => {
   fetchMock.activate();
@@ -8,6 +8,7 @@ beforeEach(() => {
 
 afterEach(() => {
   fetchMock.deactivate();
+  vi.restoreAllMocks();
 });
 
 describe("Worker", () => {
@@ -122,5 +123,48 @@ describe("Worker", () => {
     expect(resp.status).toBe(400);
     const body = await resp.json<{ error: string }>();
     expect(body.error).toContain("Invalid JSON");
+  });
+});
+
+describe("Logging", () => {
+  it("emits exactly one structured info log for successful health check", async () => {
+    const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const resp = await SELF.fetch("https://example.com/health");
+    expect(resp.status).toBe(200);
+
+    expect(infoSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).not.toHaveBeenCalled();
+
+    const [line] = infoSpy.mock.calls[0] as [string];
+    const parsed = JSON.parse(line) as Record<string, unknown>;
+
+    expect(parsed.request_id).toBe(resp.headers.get("X-Request-Id"));
+    expect(parsed.method).toBe("GET");
+    expect(parsed.path).toBe("/health");
+    expect(parsed.outcome).toBe("success");
+    expect(parsed.route_kind).toBe("health");
+    expect(typeof parsed.duration_ms).toBe("number");
+  });
+
+  it("emits structured error log for 4xx/5xx requests", async () => {
+    const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const resp = await SELF.fetch("https://example.com/invalid-path", { method: "POST" });
+    expect(resp.status).toBe(404);
+
+    expect(infoSpy).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+
+    const [line] = errorSpy.mock.calls[0] as [string];
+    const parsed = JSON.parse(line) as Record<string, unknown>;
+
+    expect(parsed.request_id).toBe(resp.headers.get("X-Request-Id"));
+    expect(parsed.method).toBe("POST");
+    expect(parsed.path).toBe("/invalid-path");
+    expect(parsed.outcome).toBe("error");
+    expect(parsed.status_code).toBe(404);
   });
 });
