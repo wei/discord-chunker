@@ -11,7 +11,7 @@
     "build": "pnpm build:web",
     "dev": "concurrently -n web,worker -c blue,green \"tsx web/build.ts --watch\" \"wrangler dev\"",
     "deploy": "pnpm build:web && wrangler deploy",
-    "lint": "biome check src test web",
+    "lint": "biome check",
     "lint:fix": "biome check --write",
     "format": "biome format --write",
     "typecheck": "tsc --noEmit && tsc --project web/tsconfig.json --noEmit",
