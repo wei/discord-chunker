@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { convertWebhookUrl, extractWebhookParts, isValidWebhookUrl } from "../web/url-converter";
-import { WEBHOOK_URL_PATTERN } from "../web/webhook-pattern";
+import { convertWebhookUrl, extractWebhookParts, isValidWebhookUrl } from "../../web/url-converter";
+import { WEBHOOK_URL_PATTERN } from "../../web/webhook-pattern";
 
 const ORIGIN = "https://discord.git.ci";
 

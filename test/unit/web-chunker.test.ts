@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chunkContent, parseConfig } from "../web/chunker";
+import { chunkContent, parseConfig } from "../../web/chunker";
 
 describe("Shared chunker (web compatibility)", () => {
   it("chunks long content with default config", () => {

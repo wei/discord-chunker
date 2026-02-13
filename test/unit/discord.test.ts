@@ -4,7 +4,7 @@ import {
   sendChunks,
   updateRateLimitState,
   validateContentType,
-} from "../src/discord";
+} from "../../src/discord";
 
 describe("buildDiscordUrl", () => {
   it("builds basic URL without params", () => {
