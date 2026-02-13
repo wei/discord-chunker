@@ -23,6 +23,7 @@
     "test:all": "pnpm test && pnpm test:e2e"
   },
   "devDependencies": {
+    "@axe-core/puppeteer": "^4.11.1",
     "@biomejs/biome": "^2.3.14",
     "@cloudflare/vitest-pool-workers": "^0.12.11",
     "@cloudflare/workers-types": "^4.20260210.0",
