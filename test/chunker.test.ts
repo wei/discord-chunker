@@ -23,6 +23,22 @@ describe("countLines", () => {
   it("handles nested/multiple fence blocks", () => {
     expect(countLines("before\n```\ncode\n```\nafter")).toBe(3);
   });
+
+  it("excludes tilde fence lines", () => {
+    expect(countLines("~~~\ncode\n~~~")).toBe(1);
+  });
+
+  it("excludes indented fence lines", () => {
+    expect(countLines("   ```\ncode\n   ```")).toBe(1);
+  });
+
+  it("returns 0 for fence-only content", () => {
+    expect(countLines("```\n```")).toBe(0);
+  });
+
+  it("handles single line", () => {
+    expect(countLines("hello world")).toBe(1);
+  });
 });
 
 describe("chunkContent", () => {
