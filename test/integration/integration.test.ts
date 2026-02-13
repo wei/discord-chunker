@@ -346,7 +346,7 @@ describe("Integration", () => {
 
   it("includes X-Service header in every response", async () => {
     mockDiscordWebhook();
-    const pkg = await import("../package.json");
+    const pkg = await import("../../package.json");
     const expectedHeader = `discord-chunker/${pkg.version}`;
 
     // 1. Success case

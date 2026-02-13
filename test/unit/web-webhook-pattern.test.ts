@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { WEBHOOK_URL_PATTERN } from "../web/webhook-pattern";
+import { WEBHOOK_URL_PATTERN } from "../../web/webhook-pattern";
 
 describe("WEBHOOK_URL_PATTERN", () => {
   it("is valid with the browser's HTML pattern `v` flag", () => {

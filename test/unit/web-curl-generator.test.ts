@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateCurl } from "../web/curl-generator";
+import { generateCurl } from "../../web/curl-generator";
 
 describe("Curl Generator", () => {
   it("generates a valid curl command", () => {

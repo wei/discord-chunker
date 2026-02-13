@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chunkContent, countLines } from "../src/chunker";
+import { chunkContent, countLines } from "../../src/chunker";
 
 describe("countLines", () => {
   it("returns 0 for empty string", () => {

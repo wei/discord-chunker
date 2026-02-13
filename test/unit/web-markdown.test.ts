@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { renderDiscordMarkdown } from "../web/markdown";
+import { renderDiscordMarkdown } from "../../web/markdown";
 
 describe("renderDiscordMarkdown", () => {
   test("renders Discord-style headers and lists while keeping inline markdown + code fences", () => {

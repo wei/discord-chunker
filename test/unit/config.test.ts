@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseConfig, validateConfig } from "../src/config";
+import { parseConfig, validateConfig } from "../../src/config";
 
 describe("parseConfig", () => {
   it("returns defaults when no params", () => {
